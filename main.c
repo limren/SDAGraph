@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #define BUFFER_SIZE 1024
@@ -57,6 +59,24 @@ struct Maillage {
 };
 
 typedef struct Maillage Maillage;
+
+typedef Vertex Centroide;
+
+struct AreteDuale {
+  int indiceC1;
+  int indiceC2;
+};
+
+typedef struct AreteDuale AreteDuale;
+
+struct GrapheDuale {
+  int numCentroides;
+  Centroide **centroides;
+  int numAretes;
+  AreteDuale **aretesDuales;
+};
+
+typedef struct GrapheDuale GrapheDuale;
 
 Vertex *emptyVertex() {
   Vertex *v = malloc(sizeof(struct Vertex));
@@ -167,6 +187,22 @@ Maillage *parseDualGraph(char *path) {
   return m;
 }
 
+void writeGDuale(char *path, GrapheDuale *grapheDuale) {
+  int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  char buffer[BUFFER_SIZE];
+  for (int i = 0; i < grapheDuale->numCentroides; i++) {
+    snprintf(buffer, BUFFER_SIZE, "v %f %f %f\n", grapheDuale->centroides[i]->x,
+             grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z);
+    write(fdWrite, buffer, BUFFER_SIZE);
+  }
+  for (int i = 0; i < grapheDuale->numAretes; i++) {
+    snprintf(buffer, BUFFER_SIZE, "l %d %d\n",
+             grapheDuale->aretesDuales[i]->indiceC1,
+             grapheDuale->aretesDuales[i]->indiceC2);
+    write(fdWrite, buffer, BUFFER_SIZE);
+  }
+}
+
 void checkValues(Maillage *m) {
   for (int i = 0; i < m->numFaces; i++) {
     printf("Val %d : %d %d %d \n", i + 1, m->faces[i]->v1, m->faces[i]->v2,
@@ -182,8 +218,8 @@ void checkValues(Maillage *m) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    raler(0, "Usage: %s nom_fichier", argv[0]);
+  if (argc < 3) {
+    raler(0, "Usage: %s nom_fichier.obj nomsortant.obj", argv[0]);
   }
 
   Maillage *m = parseDualGraph(argv[1]);
