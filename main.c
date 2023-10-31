@@ -88,18 +88,33 @@ Face *emptyFace() {
   Face *f = malloc(sizeof(struct Face));
   return f;
 }
+
 Maillage *emptyMaillage() {
   Maillage *m = malloc(sizeof(struct Maillage));
   // On met 15 au pif mais tqt on fera des tests pour savoir en moyenne lequel
   // est le plus opti
-  m->faces = malloc(sizeof(struct Face) * 30);
-  m->vertices = malloc(sizeof(struct Vertex) * 15);
+  m->faces = malloc(sizeof(struct Face) * NB_FACES);
+  m->vertices = malloc(sizeof(struct Vertex) * NB_VERTICES);
   m->numVertices = 0;
   m->numFaces = 0;
 
   return m;
 }
 
+GrapheDuale *emptyGDuale() {
+  GrapheDuale *gd = malloc(sizeof(struct GrapheDuale));
+  // m->aretesDuales = malloc
+  gd->centroides = malloc(sizeof(Centroide) * NB_FACES);
+  gd->aretesDuales = malloc(sizeof(AreteDuale) * NB_FACES);
+  gd->numAretes = 0;
+  gd->numCentroides = 0;
+
+  return gd;
+}
+AreteDuale *emptyArete() {
+  AreteDuale *a = malloc(sizeof(AreteDuale));
+  return a;
+}
 void addFace(Maillage *m, Face *f) {
   if (m->numFaces % NB_FACES == 0) {
     m->faces =
@@ -116,6 +131,23 @@ void addVertex(Maillage *m, Vertex *v) {
   }
   m->vertices[m->numVertices] = v;
   m->numVertices++;
+}
+void addCentroide(GrapheDuale *m, Centroide *c) {
+  if (m->numCentroides % NB_FACES == 0) {
+    m->centroides = realloc(m->centroides,
+                            sizeof(Centroide) * (m->numCentroides + NB_FACES));
+  }
+  m->centroides[m->numCentroides] = c;
+  m->numCentroides++;
+}
+
+void addArete(GrapheDuale *gd, AreteDuale *a) {
+  if (gd->numAretes % NB_FACES == 0) {
+    gd->aretesDuales = realloc(gd->aretesDuales,
+                               sizeof(AreteDuale) * (gd->numAretes + NB_FACES));
+  }
+  gd->aretesDuales[gd->numAretes] = a;
+  gd->numAretes++;
 }
 
 /*Maillage *parseDualGraph(char *path) {
@@ -191,16 +223,62 @@ void writeGDuale(char *path, GrapheDuale *grapheDuale) {
   int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   char buffer[BUFFER_SIZE];
   for (int i = 0; i < grapheDuale->numCentroides; i++) {
-    snprintf(buffer, BUFFER_SIZE, "v %f %f %f\n", grapheDuale->centroides[i]->x,
-             grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z);
-    write(fdWrite, buffer, BUFFER_SIZE);
+    int len = snprintf(
+        buffer, BUFFER_SIZE, "v %f %f %f\n", grapheDuale->centroides[i]->x,
+        grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z);
+    write(fdWrite, buffer, len);
   }
+
   for (int i = 0; i < grapheDuale->numAretes; i++) {
-    snprintf(buffer, BUFFER_SIZE, "l %d %d\n",
-             grapheDuale->aretesDuales[i]->indiceC1,
-             grapheDuale->aretesDuales[i]->indiceC2);
-    write(fdWrite, buffer, BUFFER_SIZE);
+    int len = snprintf(buffer, BUFFER_SIZE, "l %d %d\n",
+                       grapheDuale->aretesDuales[i]->indiceC1,
+                       grapheDuale->aretesDuales[i]->indiceC2);
+    write(fdWrite, buffer, len);
   }
+}
+
+Centroide *calculCentroide(Face *f, Vertex **v) {
+  Centroide *c = emptyVertex();
+  c->x = (v[f->v1 - 1]->x + v[f->v2 - 1]->x + v[f->v3 - 1]->x) / 3;
+  c->y = (v[f->v1 - 1]->y + v[f->v2 - 1]->y + v[f->v3 - 1]->y) / 3;
+  c->z = (v[f->v1 - 1]->z + v[f->v2 - 1]->z + v[f->v3 - 1]->z) / 3;
+  return c;
+}
+
+bool boubakarAlaPeche(Face *f1, Face *f2) { return true; }
+
+bool aAreteCommun(struct Face *f1, struct Face *f2) {
+  int communs = 0;
+
+  if (f1->v1 == f2->v1 || f1->v1 == f2->v2 || f1->v1 == f2->v3) {
+    communs++;
+  }
+
+  if (f1->v2 == f2->v1 || f1->v2 == f2->v2 || f1->v2 == f2->v3) {
+    communs++;
+  }
+
+  if (f1->v3 == f2->v1 || f1->v3 == f2->v2 || f1->v3 == f2->v3) {
+    communs++;
+  }
+
+  return communs == 2;
+}
+
+GrapheDuale *creationGraphe(Maillage *m) {
+  GrapheDuale *gd = emptyGDuale();
+  for (int i = 0; i < m->numFaces; i++) {
+    addCentroide(gd, calculCentroide(m->faces[i], m->vertices));
+    for (int j = i; j < m->numFaces; j++) {
+      if (aAreteCommun(m->faces[i], m->faces[j])) {
+        AreteDuale *a = emptyArete();
+        a->indiceC1 = i;
+        a->indiceC2 = j;
+        addArete(gd, a);
+      }
+    }
+  }
+  return gd;
 }
 
 void checkValues(Maillage *m) {
@@ -224,4 +302,7 @@ int main(int argc, char *argv[]) {
 
   Maillage *m = parseDualGraph(argv[1]);
   checkValues(m);
+
+  GrapheDuale *gd = creationGraphe(m);
+  writeGDuale("test.obj", gd);
 }
