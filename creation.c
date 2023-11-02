@@ -16,8 +16,10 @@ Maillage *emptyMaillage() {
   // est le plus opti
   m->faces = malloc(sizeof(struct Face) * NB_FACES);
   m->vertices = malloc(sizeof(struct Vertex) * NB_VERTICES);
+  m->aretes = malloc(sizeof(struct Arete) * 3 * NB_FACES);
   m->numVertices = 0;
   m->numFaces = 0;
+  m->numAretes = 0;
   return m;
 }
 
@@ -33,5 +35,13 @@ GrapheDuale *emptyGDuale() {
 
 AreteDuale *emptyArete() {
   AreteDuale *a = malloc(sizeof(AreteDuale));
+  return a;
+}
+
+Arete *creationArete(int v1, int v2, Face *f) {
+  Arete *a = malloc(sizeof(Arete));
+  a->v1 = v1;
+  a->v2 = v2;
+  a->f = f;
   return a;
 }

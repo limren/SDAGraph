@@ -19,8 +19,8 @@ struct Face {
 typedef struct Face Face;
 
 struct Arete {
-  Vertex *v1;
-  Vertex *v2;
+  int v1;
+  int v2;
   Face *f;
 };
 
@@ -29,6 +29,8 @@ typedef struct Arete Arete;
 struct Maillage {
   int numVertices;
   Vertex **vertices;
+  int numAretes;
+  Arete **aretes;
   int numFaces;
   Face **faces;
 };

@@ -60,7 +60,7 @@ void addCentroide(GrapheDuale *m, Centroide *c) {
   m->numCentroides++;
 }
 
-void addArete(GrapheDuale *gd, AreteDuale *a) {
+void addAreteDuale(GrapheDuale *gd, AreteDuale *a) {
   if (gd->numAretes % NB_FACES == 0) {
     gd->aretesDuales = realloc(gd->aretesDuales,
                                sizeof(AreteDuale) * (gd->numAretes + NB_FACES));
@@ -69,55 +69,17 @@ void addArete(GrapheDuale *gd, AreteDuale *a) {
   gd->numAretes++;
 }
 
-/*Maillage *parseDualGraph(char *path) {
-  Maillage *m = emptyMaillage();
-  int fdRead;
-  CHK(fdRead = open(path, O_RDONLY));
-  int readBytes;
-  char *buffer[BUFFER_SIZE];
-  int nbVertices = 0;
-  int nbFaces = 0;
-  // Si dans vertex = on continue en légende dans la vertex sinon on continue
-  // dans la face
-  bool wasInVertex = true;
-  Vertex *currVertex;
-  Face *currFace;
-  // 0 - x | 1 - y | 2 - z
-  Vertex *new;
-  Face *new;
-
-  int currCoord = 0;
-  bool hasDone = true;
-  while ((readBytes = read(fdRead, buffer, BUFFER_SIZE)) > 0) {
-    if (wasInVertex) {
-      if (hasDone) {
-        new = emptyVertex(nbVertices);
-        nbVertices++;
-        currCoord = 0;
-      } else {
-        new = currVertex;
-      }
-    } else {
-      if (hasDone) {
-        new = emptyFace();
-        nbFaces++;
-        currCoord = 0;
-      } else {
-        new = currFace;
-      }
-    }
-    for(int i = 0; i<readBytes; i++)
-    {
-
-    }
+void addArete(Maillage *m, Face *f) {
+  if ((m->numAretes % (3 * NB_FACES)) == 0) {
+    m->aretes = realloc(m->aretes, sizeof(Arete) * (m->numAretes + NB_FACES));
   }
-
-  CHK(close(fdRead));
+  m->aretes[m->numAretes++] = creationArete(f->v1, f->v2, f);
+  m->aretes[m->numAretes++] = creationArete(f->v1, f->v3, f);
+  m->aretes[m->numAretes++] = creationArete(f->v2, f->v3, f);
 }
-*/
 
 int sontEquilaventes(Arete *a, Arete *b) {
-  if ((a->v1 == b->v1 || a->v1 == b->v2) &&
+  if ((a->v1 == b->v2 || a->v1 == b->v1) &&
       (a->v2 == b->v1 || a->v2 == b->v2)) {
     return 1;
   }
@@ -135,6 +97,7 @@ Maillage *parseDualGraph(char *path) {
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
+      addArete(m, f);
     } else if (buffer[0] == 'v') {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
@@ -198,32 +161,6 @@ void creationCentroides(GrapheDuale *gd, Maillage *m) {
   }
 }
 
-double calculLongueur(Arete *a) {
-  double x = a->v2->x - a->v1->x;
-  double y = a->v2->y - a->v1->y;
-  double z = a->v2->z - a->v1->z;
-  return sqrt(x * x + y * y + z * z);
-}
-
-int estSuperieureA(Arete *a, Arete *b) {
-  double longueurA = calculLongueur(a);
-  double longueurB = calculLongueur(b);
-  if (longueurA > longueurB) {
-    return 1;
-  }
-  return 0;
-}
-
-/*
- for (int j = i + 1; j < m->numFaces; j++) {
-      if (aAreteCommun(m->faces[i], m->faces[j])) {
-        AreteDuale *a = emptyArete();
-        a->indiceC1 = i;
-        a->indiceC2 = j;
-        addArete(gd, a);
-      }
-    }
-*/
 void checkValues(Maillage *m) {
   for (int i = 0; i < m->numFaces; i++) {
     printf("Val %d : %d %d %d \n", i + 1, m->faces[i]->v1, m->faces[i]->v2,
