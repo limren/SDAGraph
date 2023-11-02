@@ -1,4 +1,8 @@
+#include "const.h"
+#include "creation.h"
+#include "structs.h"
 #include <fcntl.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -8,9 +12,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define BUFFER_SIZE 1024
-#define NB_VERTICES 80
-#define NB_FACES 80
 #define CHK(op)                                                                \
   do {                                                                         \
     if ((op) == -1) {                                                          \
@@ -33,88 +34,6 @@ noreturn void raler(int syserr, const char *msg, ...) {
   exit(EXIT_FAILURE);
 }
 
-struct Vertex {
-  // Coordonnées des sommets
-  float x;
-  float y;
-  float z;
-};
-
-typedef struct Vertex Vertex;
-
-struct Face {
-  // On conserve l'indice des vertex
-  int v1;
-  int v2;
-  int v3;
-};
-
-typedef struct Face Face;
-
-struct Maillage {
-  int numVertices;
-  Vertex **vertices;
-  int numFaces;
-  Face **faces;
-};
-
-typedef struct Maillage Maillage;
-
-typedef Vertex Centroide;
-
-struct AreteDuale {
-  int indiceC1;
-  int indiceC2;
-};
-
-typedef struct AreteDuale AreteDuale;
-
-struct GrapheDuale {
-  int numCentroides;
-  Centroide **centroides;
-  int numAretes;
-  AreteDuale **aretesDuales;
-};
-
-typedef struct GrapheDuale GrapheDuale;
-
-Vertex *emptyVertex() {
-  Vertex *v = malloc(sizeof(struct Vertex));
-
-  return v;
-}
-
-Face *emptyFace() {
-  Face *f = malloc(sizeof(struct Face));
-  return f;
-}
-
-Maillage *emptyMaillage() {
-  Maillage *m = malloc(sizeof(struct Maillage));
-  // On met 15 au pif mais tqt on fera des tests pour savoir en moyenne lequel
-  // est le plus opti
-  m->faces = malloc(sizeof(struct Face) * NB_FACES);
-  m->vertices = malloc(sizeof(struct Vertex) * NB_VERTICES);
-  m->numVertices = 0;
-  m->numFaces = 0;
-
-  return m;
-}
-
-GrapheDuale *emptyGDuale() {
-  GrapheDuale *gd = malloc(sizeof(struct GrapheDuale));
-  // m->aretesDuales = malloc
-  gd->centroides = malloc(sizeof(Centroide) * NB_FACES);
-  gd->aretesDuales = malloc(sizeof(AreteDuale) * NB_FACES);
-  gd->numAretes = 0;
-  gd->numCentroides = 0;
-
-  return gd;
-}
-AreteDuale *emptyArete() {
-  AreteDuale *a = malloc(sizeof(AreteDuale));
-  return a;
-}
 void addFace(Maillage *m, Face *f) {
   if (m->numFaces % NB_FACES == 0) {
     m->faces =
@@ -197,6 +116,14 @@ void addArete(GrapheDuale *gd, AreteDuale *a) {
 }
 */
 
+int sontEquilaventes(Arete *a, Arete *b) {
+  if ((a->v1 == b->v1 || a->v1 == b->v2) &&
+      (a->v2 == b->v1 || a->v2 == b->v2)) {
+    return 1;
+  }
+  return 0;
+}
+
 Maillage *parseDualGraph(char *path) {
   Maillage *m = emptyMaillage();
   FILE *fread;
@@ -265,11 +192,30 @@ bool aAreteCommun(struct Face *f1, struct Face *f2) {
   return communs == 2;
 }
 
-GrapheDuale *creationGraphe(Maillage *m) {
-  GrapheDuale *gd = emptyGDuale();
+void creationCentroides(GrapheDuale *gd, Maillage *m) {
   for (int i = 0; i < m->numFaces; i++) {
     addCentroide(gd, calculCentroide(m->faces[i], m->vertices));
-    for (int j = i; j < m->numFaces; j++) {
+  }
+}
+
+double calculLongueur(Arete *a) {
+  double x = a->v2->x - a->v1->x;
+  double y = a->v2->y - a->v1->y;
+  double z = a->v2->z - a->v1->z;
+  return sqrt(x * x + y * y + z * z);
+}
+
+int estSuperieureA(Arete *a, Arete *b) {
+  double longueurA = calculLongueur(a);
+  double longueurB = calculLongueur(b);
+  if (longueurA > longueurB) {
+    return 1;
+  }
+  return 0;
+}
+
+/*
+ for (int j = i + 1; j < m->numFaces; j++) {
       if (aAreteCommun(m->faces[i], m->faces[j])) {
         AreteDuale *a = emptyArete();
         a->indiceC1 = i;
@@ -277,10 +223,7 @@ GrapheDuale *creationGraphe(Maillage *m) {
         addArete(gd, a);
       }
     }
-  }
-  return gd;
-}
-
+*/
 void checkValues(Maillage *m) {
   for (int i = 0; i < m->numFaces; i++) {
     printf("Val %d : %d %d %d \n", i + 1, m->faces[i]->v1, m->faces[i]->v2,
@@ -303,6 +246,8 @@ int main(int argc, char *argv[]) {
   Maillage *m = parseDualGraph(argv[1]);
   checkValues(m);
 
-  GrapheDuale *gd = creationGraphe(m);
-  writeGDuale("test.obj", gd);
+  GrapheDuale *gd = emptyGDuale();
+
+  creationCentroides(gd, m);
+  writeGDuale(argv[2], gd);
 }
