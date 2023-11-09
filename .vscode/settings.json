@@ -3,6 +3,13 @@
         "structs.h": "c",
         "stdnoreturn.h": "c",
         "types.h": "c",
-        "const.h": "c"
-    }
+        "const.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "type_traits": "c",
+        "stdio.h": "c",
+        "tris.h": "c",
+        "random": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

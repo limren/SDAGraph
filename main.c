@@ -1,6 +1,7 @@
 #include "const.h"
 #include "creation.h"
 #include "structs.h"
+#include "tris.h"
 #include <fcntl.h>
 #include <math.h>
 #include <stdarg.h>
@@ -8,10 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 #define CHK(op)                                                                \
   do {                                                                         \
     if ((op) == -1) {                                                          \
@@ -69,24 +70,25 @@ void addAreteDuale(GrapheDuale *gd, AreteDuale *a) {
   gd->numAretes++;
 }
 
-void addArete(Maillage *m, Face *f) {
-  if ((m->numAretes % (3 * NB_FACES)) == 0) {
-    m->aretes = realloc(m->aretes, sizeof(Arete) * (m->numAretes + NB_FACES));
+void addSelectArete(SelectAretes *sa, Face *f) {
+
+  Arete *a = creationArete(sa, f->v1, f->v2, f);
+  if (a != NULL) {
+    sa->aretes[sa->numAretes++] = a;
   }
-  m->aretes[m->numAretes++] = creationArete(f->v1, f->v2, f);
-  m->aretes[m->numAretes++] = creationArete(f->v1, f->v3, f);
-  m->aretes[m->numAretes++] = creationArete(f->v2, f->v3, f);
+
+  Arete *b = creationArete(sa, f->v1, f->v3, f);
+  if (b != NULL) {
+    sa->aretes[sa->numAretes++] = b;
+  }
+
+  Arete *c = creationArete(sa, f->v2, f->v3, f);
+  if (c != NULL) {
+    sa->aretes[sa->numAretes++] = c;
+  }
 }
 
-int sontEquilaventes(Arete *a, Arete *b) {
-  if ((a->v1 == b->v2 || a->v1 == b->v1) &&
-      (a->v2 == b->v1 || a->v2 == b->v2)) {
-    return 1;
-  }
-  return 0;
-}
-
-Maillage *parseDualGraph(char *path) {
+Maillage *parseDualGraphSelect(char *path, SelectAretes *sa) {
   Maillage *m = emptyMaillage();
   FILE *fread;
   fread = fopen(path, "r");
@@ -97,17 +99,39 @@ Maillage *parseDualGraph(char *path) {
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
-      addArete(m, f);
+      addSelectArete(sa, f);
     } else if (buffer[0] == 'v') {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
       addVertex(m, v);
     }
   }
-
   fclose(fread);
   return m;
 }
+
+/*
+Maillage *parseDualGraphHeap(char *path, HeapAretes *sa) {
+  Maillage *m = emptyMaillage();
+  FILE *fread;
+  fread = fopen(path, "r");
+  char buffer[BUFFER_SIZE];
+
+  while (fgets(buffer, BUFFER_SIZE, fread)) {
+    if (buffer[0] == 'f') {
+      Face *f = emptyFace();
+      sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
+      addFace(m, f);
+      addAreteHeap(m, f);
+    } else if (buffer[0] == 'v') {
+      Vertex *v = emptyVertex();
+      sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
+      addVertex(m, v);
+    }
+  }
+  fclose(fread);
+  return m;
+}*/
 
 void writeGDuale(char *path, GrapheDuale *grapheDuale) {
   int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -134,8 +158,6 @@ Centroide *calculCentroide(Face *f, Vertex **v) {
   c->z = (v[f->v1 - 1]->z + v[f->v2 - 1]->z + v[f->v3 - 1]->z) / 3;
   return c;
 }
-
-bool boubakarAlaPeche(Face *f1, Face *f2) { return true; }
 
 bool aAreteCommun(struct Face *f1, struct Face *f2) {
   int communs = 0;
@@ -175,16 +197,35 @@ void checkValues(Maillage *m) {
   printf("Number faces & vertices : %d %d \n", m->numFaces, m->numVertices);
 }
 
+void checkSelectAretes(SelectAretes *sa) {
+  for (int i = 0; i < 21; i++) {
+    printf("Aretes : %d %d \n", sa->aretes[i]->v1, sa->aretes[i]->v2);
+  }
+}
+
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    raler(0, "Usage: %s nom_fichier.obj nomsortant.obj", argv[0]);
+  if (argc < 4) {
+    raler(0,
+          "Usage: %s nom_fichier.obj nomsortant.obj type_algo [selectsort, "
+          "heapsort, AVL]",
+          argv[0]);
   }
 
-  Maillage *m = parseDualGraph(argv[1]);
-  checkValues(m);
+  // checkValues(m);
 
   GrapheDuale *gd = emptyGDuale();
 
-  creationCentroides(gd, m);
-  writeGDuale(argv[2], gd);
+  //  creationCentroides(gd, m);
+  // writeGDuale(argv[2], gd);
+  if (strcmp(argv[3], "selectsort") == 0) {
+    SelectAretes *sa = emptySA();
+    Maillage *m = parseDualGraphSelect(argv[1], sa);
+    checkSelectAretes(sa);
+    triSelection(sa);
+    printf("-------------- \n");
+    checkSelectAretes(sa);
+  } else if (strcmp(argv[3], "heapsort") == 0) {
+    // HeapAretes *ha = emptyHA();
+    // Maillage *m = parseDualGraphHeap(argv[1], );
+  }
 }

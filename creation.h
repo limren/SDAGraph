@@ -7,4 +7,7 @@ Face *emptyFace();
 Maillage *emptyMaillage();
 GrapheDuale *emptyGDuale();
 AreteDuale *emptyArete();
-Arete *creationArete(int v1, int v2, Face *f)
+Arete *creationArete(SelectAretes *sa, int v1, int v2, Face *f);
+int sontEquilaventes(Arete *a, Arete *b);
+SelectAretes *emptySA();
+HeapAretes *emptyHA();

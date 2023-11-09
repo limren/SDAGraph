@@ -29,11 +29,18 @@ typedef struct Arete Arete;
 struct Maillage {
   int numVertices;
   Vertex **vertices;
-  int numAretes;
-  Arete **aretes;
+
   int numFaces;
   Face **faces;
 };
+
+struct SelectAretes {
+  int numAretes;
+  Arete **aretes;
+};
+
+typedef struct SelectAretes SelectAretes;
+// struct AVLAretes{};
 
 typedef struct Maillage Maillage;
 
@@ -54,3 +61,10 @@ struct GrapheDuale {
 };
 
 typedef struct GrapheDuale GrapheDuale;
+struct HeapAretes {
+  int capacite;
+  int noeudsAlloues;
+  Arete **T;
+};
+
+typedef struct HeapAretes HeapAretes;
