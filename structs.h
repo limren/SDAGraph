@@ -1,6 +1,7 @@
 #pragma once
 
-struct Vertex {
+struct Vertex
+{
   // Coordonnées des sommets
   float x;
   float y;
@@ -9,7 +10,8 @@ struct Vertex {
 
 typedef struct Vertex Vertex;
 
-struct Face {
+struct Face
+{
   // On conserve l'indice des vertex
   int v1;
   int v2;
@@ -18,15 +20,17 @@ struct Face {
 
 typedef struct Face Face;
 
-struct Arete {
+struct Arete
+{
   int v1;
   int v2;
-  Face *f;
+  int indexFace;
 };
 
 typedef struct Arete Arete;
 
-struct Maillage {
+struct Maillage
+{
   int numVertices;
   Vertex **vertices;
 
@@ -34,7 +38,8 @@ struct Maillage {
   Face **faces;
 };
 
-struct SelectAretes {
+struct SelectAretes
+{
   int numAretes;
   Arete **aretes;
 };
@@ -46,24 +51,28 @@ typedef struct Maillage Maillage;
 
 typedef Vertex Centroide;
 
-struct AreteDuale {
+struct AreteDuale
+{
   int indiceC1;
   int indiceC2;
 };
 
 typedef struct AreteDuale AreteDuale;
 
-struct GrapheDuale {
+struct GrapheDuale
+{
   int numCentroides;
   Centroide **centroides;
-  int numAretes;
+  int numAretesDuales;
   AreteDuale **aretesDuales;
 };
 
 typedef struct GrapheDuale GrapheDuale;
-struct HeapAretes {
+struct HeapAretes
+{
   int capacite;
   int noeudsAlloues;
+  int numNoeuds;
   Arete **T;
 };
 
