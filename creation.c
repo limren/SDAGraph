@@ -34,7 +34,7 @@ GrapheDuale *emptyGDuale()
   // On prend le pire des cas pour le moment où on estime qu'il y a 3 arêtes
   // communes
   gd->aretesDuales = malloc(sizeof(AreteDuale) * (3 * NB_FACES));
-  gd->numAretes = 0;
+  gd->numAretesDuales = 0;
   gd->numCentroides = 0;
   return gd;
 }
@@ -80,29 +80,29 @@ Arete *creationArete(SelectAretes *sa, int v1, int v2, int numFace)
     a->v1 = v1;
     a->v2 = v2;
   }
-  a->f = numFace;
+  a->indexFace = numFace;
   return a;
 }
 
-Arete *creationHeapArete(HeapAretes *ha, int v1, int v2, Face *f)
+Arete *creationHeapArete(HeapAretes *ha, int v1, int v2, int numFace)
 {
-  if ((ha->capacite == ha->noeudsAlloues))
+  if ((ha->capacite  == ha->noeudsAlloues))
   {
-    ha->capacite += sizeof(struct Arete) * (3 * NB_FACES);
-    ha->T = realloc(ha->T, ha->capacite);
+    ha->capacite += (3 * NB_FACES);
+    ha->T = realloc(ha->T, sizeof(Arete*)* ha->capacite);
   }
   Arete *a = malloc(sizeof(Arete));
-  if (a->v1 > a->v2)
-  {
-    a->v1 = v1;
-    a->v2 = v2;
-  }
-  else
+  if (v1 > v2)
   {
     a->v1 = v2;
     a->v2 = v1;
   }
-  a->f = f;
+  else
+  {
+    a->v1 = v1;
+    a->v2 = v2;
+  }
+  a->indexFace = numFace;
   return a;
 }
 
@@ -110,18 +110,31 @@ HeapAretes *emptyHA()
 {
   HeapAretes *t = malloc(sizeof(HeapAretes));
   t->noeudsAlloues = 0;
-  t->T = malloc(sizeof(struct Arete) * (3 * NB_FACES));
-  t->capacite = sizeof(struct Arete) * (3 * NB_FACES);
+  t->T = malloc(sizeof(Arete *) * (3 * NB_FACES));
+  t->capacite = (3 * NB_FACES);
   return t;
 }
 
-void generationADuale(SelectAretes *sa, GrapheDuale *gd)
+AreteDuale * creationADuale(int c1, int c2)
 {
-  for (int i = 0; i < sa->numAretes - 1; i++)
+  AreteDuale *a = malloc(sizeof(AreteDuale));
+  a->indiceC1 = c1;
+  a->indiceC2 = c2;
+  return a;
+}
+
+void generationADuale(Arete **t, GrapheDuale *gd, int size)
+{
+  for (int i = 0; i < size; i++)
   {
-    if (sontEquilaventes(sa->aretes[i], sa->aretes[i + 1]))
+    if (sontEquilaventes(t[i], t[i + 1]))
     {
-      // gd->aretesDuales[gd->numAretesDuales] = sa->
+      if(gd->numAretesDuales %  (3 * NB_FACES) == 0)
+      {
+        gd->aretesDuales = realloc(gd->aretesDuales, sizeof(AreteDuale) * (gd->numAretesDuales + (3 * NB_FACES)));
+      }
+      gd->aretesDuales[gd->numAretesDuales] = creationADuale(t[i]->indexFace, t[i + 1]->indexFace);
+      gd->numAretesDuales++;
     }
   }
 }

@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 #define CHK(op)     \
   do                \
   {                 \
@@ -72,16 +73,16 @@ void addCentroide(GrapheDuale *m, Centroide *c)
 
 void addAreteDuale(GrapheDuale *gd, AreteDuale *a)
 {
-  if (gd->numAretes % NB_FACES == 0)
+  if (gd->numAretesDuales % NB_FACES == 0)
   {
     gd->aretesDuales = realloc(gd->aretesDuales,
-                               sizeof(AreteDuale) * (gd->numAretes + NB_FACES));
+                               sizeof(AreteDuale) * (gd->numAretesDuales + NB_FACES));
   }
-  gd->aretesDuales[gd->numAretes] = a;
-  gd->numAretes++;
+  gd->aretesDuales[gd->numAretesDuales] = a;
+  gd->numAretesDuales++;
 }
 
-void addSelectArete(SelectAretes *sa, int numFace)
+void addSelectArete(SelectAretes *sa, Face * f, int numFace)
 {
 
   Arete *a = creationArete(sa, f->v1, f->v2, numFace);
@@ -103,21 +104,21 @@ void addSelectArete(SelectAretes *sa, int numFace)
   }
 }
 
-void addHeapArete(HeapAretes *ha, Face *f)
+void addHeapArete(HeapAretes *ha, Face *f, int numFace)
 {
-  Arete *a = creationHeapArete(ha, f->v1, f->v2, f);
+  Arete *a = creationHeapArete(ha, f->v1, f->v2, numFace);
   if (a != NULL)
   {
     insertionTas(ha, a);
   }
 
-  Arete *b = creationHeapArete(ha, f->v1, f->v3, f);
+  Arete *b = creationHeapArete(ha, f->v1, f->v3, numFace);
   if (b != NULL)
   {
     insertionTas(ha, b);
   }
 
-  Arete *c = creationHeapArete(ha, f->v2, f->v3, f);
+  Arete *c = creationHeapArete(ha, f->v2, f->v3, numFace);
   if (c != NULL)
   {
     insertionTas(ha, c);
@@ -138,7 +139,7 @@ Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
-      addSelectArete(sa, m->numFaces - 1);
+      addSelectArete(sa, f, m->numFaces - 1);
     }
     else if (buffer[0] == 'v')
     {
@@ -165,7 +166,7 @@ Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
-      addHeapArete(ha, f);
+      addHeapArete(ha, f, m->numFaces - 1);
     }
     else if (buffer[0] == 'v')
     {
@@ -190,11 +191,11 @@ void writeGDuale(char *path, GrapheDuale *grapheDuale)
     write(fdWrite, buffer, len);
   }
 
-  for (int i = 0; i < grapheDuale->numAretes; i++)
+  for (int i = 0; i < grapheDuale->numAretesDuales; i++)
   {
     int len = snprintf(buffer, BUFFER_SIZE, "l %d %d\n",
-                       grapheDuale->aretesDuales[i]->indiceC1,
-                       grapheDuale->aretesDuales[i]->indiceC2);
+                       grapheDuale->aretesDuales[i]->indiceC1+1,
+                       grapheDuale->aretesDuales[i]->indiceC2+1);
     write(fdWrite, buffer, len);
   }
 }
@@ -264,7 +265,7 @@ void checkSelectAretes(SelectAretes *sa)
 
 void checkHeapAretes(HeapAretes *ha)
 {
-  for (int i = 0; i < ha->noeudsAlloues; i++)
+  for (int i = 0; i < ha->numNoeuds; i++)
   {
     printf("Aretes : %d %d \n", ha->T[i]->v1, ha->T[i]->v2);
   }
@@ -278,21 +279,38 @@ int main(int argc, char *argv[])
           "heapsort, AVL]",
           argv[0]);
   }
-
+  clock_t start, end;
+  double cpu_time_used;
   GrapheDuale *gd = emptyGDuale();
   if (strcmp(argv[3], "selectsort") == 0)
   {
     SelectAretes *sa = emptySA();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
+   
+    start = clock();
     triSelection(sa);
-    checkSelectAretes(sa);
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("CPU Time: %f seconds\n", cpu_time_used);
     creationCentroides(gd, m);
-    generationADuale(sa, gd);
+    generationADuale(sa->aretes, gd, sa->numAretes);
     writeGDuale(argv[2], gd);
   }
   else if (strcmp(argv[3], "heapsort") == 0)
   {
     HeapAretes *ha = emptyHA();
     Maillage *m = parseDualGraphHeap(argv[1], ha);
+    start = clock();
+    while(ha->noeudsAlloues != 0)
+    {
+      supprimerMax(ha);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("CPU Time: %f seconds\n", cpu_time_used);
+    //checkHeapAretes(ha);
+    creationCentroides(gd, m);
+    generationADuale(ha->T, gd, ha->numNoeuds);
+    writeGDuale(argv[2], gd);
   }
 }

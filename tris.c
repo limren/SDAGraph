@@ -41,11 +41,6 @@ int pere(int i) { return (i - 1) / 2; }
 
 void insertionTas(HeapAretes *t, Arete *val)
 {
-  if (t->capacite <= t->noeudsAlloues)
-  {
-    printf("Votre heap est pleine \n");
-    return;
-  }
   int i = t->noeudsAlloues;
   t->T[t->noeudsAlloues] = val;
   while (i > 0 && estSuperieureA(val, t->T[pere(i)]))
@@ -75,8 +70,7 @@ void supprimerMax(HeapAretes *t)
   t->T[0] = t->T[i];
   i = 0;
   while (2 * i + 2 < t->noeudsAlloues &&
-         (estSuperieureA(t->T[i], t->T[filsGauche(i)]) ||
-          t->T[i] < t->T[filsDroit(i)]))
+         (estSuperieureA(t->T[filsGauche(i)], t->T[i] ) || estSuperieureA(t->T[filsDroit(i)], t->T[i])))
   {
     if (estSuperieureA(t->T[filsGauche(i)], t->T[filsDroit(i)]))
     {
