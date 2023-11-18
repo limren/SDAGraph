@@ -2,8 +2,8 @@ CC = gcc
 CFLAGS = -Wall -Wextra
 LDFLAGS =
 
-SOURCES = main.c creation.c tris.c
-HEADERS = const.h structs.h creation.h tris.h
+SOURCES = main.c creation.c tris.c AVL.c
+HEADERS = const.h structs.h creation.h tris.h AVL.h
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = main
 
