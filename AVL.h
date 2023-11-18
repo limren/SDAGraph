@@ -15,8 +15,8 @@ struct noeud {
 };
 
 AVL newArbre(Arete *val, int hauteur, AVL pere);
-void rotationGauche(AVL a);
-void rotationDroite(AVL a);
+void rotationGauche(AVL *a);
+void rotationDroite(AVL *a);
 void rotationGD(AVL a);
 void rotationDG(AVL a);
 void insertionABR(AVL *arbre, Arete *val);

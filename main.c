@@ -182,12 +182,8 @@ Maillage *parseDualGraphAVL(char *path, AVL *avl) {
       addFace(m, f);
       addAVLAretes(avl, f, m->numFaces - 1);
       printf("Etat arbre : \n");
-      printf("Racine : %d %d \n", (*avl)->val->v1, (*avl)->val->v2);
       affichageArbre(*avl);
-
       printf("\n \n");
-      // printf("hauteur : %d \n", (*avl)->hauteur);
-      //  affichageArbre(*avl);
     } else if (buffer[0] == 'v') {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
