@@ -3,6 +3,7 @@
 #include "creation.h"
 #include "structs.h"
 #include "tris.h"
+#include "Graph.h"
 #include <fcntl.h>
 #include <math.h>
 #include <stdarg.h>
@@ -15,15 +16,18 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#define CHK(op)                                                                \
-  do {                                                                         \
-    if ((op) == -1) {                                                          \
-      perror(#op);                                                             \
-      exit(1);                                                                 \
-    }                                                                          \
+#define CHK(op)     \
+  do                \
+  {                 \
+    if ((op) == -1) \
+    {               \
+      perror(#op);  \
+      exit(1);      \
+    }               \
   } while (0)
 
-noreturn void raler(int syserr, const char *msg, ...) {
+noreturn void raler(int syserr, const char *msg, ...)
+{
   va_list ap;
 
   va_start(ap, msg);
@@ -37,8 +41,10 @@ noreturn void raler(int syserr, const char *msg, ...) {
   exit(EXIT_FAILURE);
 }
 
-void addFace(Maillage *m, Face *f) {
-  if (m->numFaces % NB_FACES == 0) {
+void addFace(Maillage *m, Face *f)
+{
+  if (m->numFaces % NB_FACES == 0)
+  {
     m->faces =
         realloc(m->faces, sizeof(struct Face) * (m->numFaces + NB_FACES));
   }
@@ -46,16 +52,20 @@ void addFace(Maillage *m, Face *f) {
   m->numFaces++;
 }
 
-void addVertex(Maillage *m, Vertex *v) {
-  if (m->numVertices % NB_VERTICES == 0) {
+void addVertex(Maillage *m, Vertex *v)
+{
+  if (m->numVertices % NB_VERTICES == 0)
+  {
     m->vertices = realloc(m->vertices, sizeof(struct Vertex) *
                                            (m->numVertices + NB_VERTICES));
   }
   m->vertices[m->numVertices] = v;
   m->numVertices++;
 }
-void addCentroide(GrapheDuale *m, Centroide *c) {
-  if (m->numCentroides % NB_FACES == 0) {
+void addCentroide(GrapheDuale *m, Centroide *c)
+{
+  if (m->numCentroides % NB_FACES == 0)
+  {
     m->centroides = realloc(m->centroides,
                             sizeof(Centroide) * (m->numCentroides + NB_FACES));
   }
@@ -63,8 +73,10 @@ void addCentroide(GrapheDuale *m, Centroide *c) {
   m->numCentroides++;
 }
 
-void addAreteDuale(GrapheDuale *gd, AreteDuale *a) {
-  if (gd->numAretesDuales % NB_FACES == 0) {
+void addAreteDuale(GrapheDuale *gd, AreteDuale *a)
+{
+  if (gd->numAretesDuales % NB_FACES == 0)
+  {
     gd->aretesDuales =
         realloc(gd->aretesDuales,
                 sizeof(AreteDuale) * (gd->numAretesDuales + NB_FACES));
@@ -73,71 +85,88 @@ void addAreteDuale(GrapheDuale *gd, AreteDuale *a) {
   gd->numAretesDuales++;
 }
 
-void addSelectArete(SelectAretes *sa, Face *f, int numFace) {
+void addSelectArete(SelectAretes *sa, Face *f, int numFace)
+{
 
   Arete *a = creationSelectArete(sa, f->v1, f->v2, numFace);
-  if (a != NULL) {
+  if (a != NULL)
+  {
     sa->aretes[sa->numAretes++] = a;
   }
 
   Arete *b = creationSelectArete(sa, f->v1, f->v3, numFace);
-  if (b != NULL) {
+  if (b != NULL)
+  {
     sa->aretes[sa->numAretes++] = b;
   }
 
   Arete *c = creationSelectArete(sa, f->v2, f->v3, numFace);
-  if (c != NULL) {
+  if (c != NULL)
+  {
     sa->aretes[sa->numAretes++] = c;
   }
 }
 
-void addHeapArete(HeapAretes *ha, Face *f, int numFace) {
+void addHeapArete(HeapAretes *ha, Face *f, int numFace)
+{
   Arete *a = creationHeapArete(ha, f->v1, f->v2, numFace);
-  if (a != NULL) {
+  if (a != NULL)
+  {
     insertionTas(ha, a);
   }
 
   Arete *b = creationHeapArete(ha, f->v1, f->v3, numFace);
-  if (b != NULL) {
+  if (b != NULL)
+  {
     insertionTas(ha, b);
   }
 
   Arete *c = creationHeapArete(ha, f->v2, f->v3, numFace);
-  if (c != NULL) {
+  if (c != NULL)
+  {
     insertionTas(ha, c);
   }
 }
 
-void addAVLAretes(AVL *avl, Face *f, int numFace) {
+void addAVLAretes(AVL *avl, Face *f, int numFace)
+{
   Arete *a = creationArete(f->v1, f->v2, numFace);
-  if (a != NULL) {
+  if (a != NULL)
+  {
     insertion(avl, a);
   }
 
   Arete *b = creationArete(f->v1, f->v3, numFace);
-  if (b != NULL) {
+  if (b != NULL)
+  {
     insertion(avl, b);
   }
 
   Arete *c = creationArete(f->v2, f->v3, numFace);
-  if (c != NULL) {
+  if (c != NULL)
+  {
     insertion(avl, c);
   }
 }
 
-Maillage *parseDualGraphSelect(char *path, SelectAretes *sa) {
+Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
+{
   Maillage *m = emptyMaillage();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
 
-  while (fgets(buffer, BUFFER_SIZE, fread)) {
-    if (buffer[0] == 'f') {
+  while (fgets(buffer, BUFFER_SIZE, fread))
+  {
+    if (buffer[0] == 'f')
+    {
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
       addSelectArete(sa, f, m->numFaces - 1);
-    } else if (buffer[0] == 'v') {
+    }
+    else if (buffer[0] == 'v')
+    {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
       addVertex(m, v);
@@ -147,19 +176,24 @@ Maillage *parseDualGraphSelect(char *path, SelectAretes *sa) {
   return m;
 }
 
-Maillage *parseDualGraphHeap(char *path, HeapAretes *ha) {
+Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
+{
   Maillage *m = emptyMaillage();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
 
-  while (fgets(buffer, BUFFER_SIZE, fread)) {
-    if (buffer[0] == 'f') {
+  while (fgets(buffer, BUFFER_SIZE, fread))
+  {
+    if (buffer[0] == 'f')
+    {
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
       addHeapArete(ha, f, m->numFaces - 1);
-    } else if (buffer[0] == 'v') {
+    }
+    else if (buffer[0] == 'v')
+    {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
       addVertex(m, v);
@@ -169,14 +203,17 @@ Maillage *parseDualGraphHeap(char *path, HeapAretes *ha) {
   return m;
 }
 
-Maillage *parseDualGraphAVL(char *path, AVL *avl) {
+Maillage *parseDualGraphAVL(char *path, AVL *avl)
+{
   Maillage *m = emptyMaillage();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
 
-  while (fgets(buffer, BUFFER_SIZE, fread)) {
-    if (buffer[0] == 'f') {
+  while (fgets(buffer, BUFFER_SIZE, fread))
+  {
+    if (buffer[0] == 'f')
+    {
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
@@ -184,7 +221,9 @@ Maillage *parseDualGraphAVL(char *path, AVL *avl) {
       printf("Etat arbre : \n");
       affichageArbre(*avl);
       printf("\n \n");
-    } else if (buffer[0] == 'v') {
+    }
+    else if (buffer[0] == 'v')
+    {
       Vertex *v = emptyVertex();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
       addVertex(m, v);
@@ -194,17 +233,20 @@ Maillage *parseDualGraphAVL(char *path, AVL *avl) {
   return m;
 }
 
-void writeGDuale(char *path, GrapheDuale *grapheDuale) {
+void writeGDuale(char *path, GrapheDuale *grapheDuale)
+{
   int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   char buffer[BUFFER_SIZE];
-  for (int i = 0; i < grapheDuale->numCentroides; i++) {
+  for (int i = 0; i < grapheDuale->numCentroides; i++)
+  {
     int len = snprintf(
         buffer, BUFFER_SIZE, "v %f %f %f\n", grapheDuale->centroides[i]->x,
         grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z);
     write(fdWrite, buffer, len);
   }
 
-  for (int i = 0; i < grapheDuale->numAretesDuales; i++) {
+  for (int i = 0; i < grapheDuale->numAretesDuales; i++)
+  {
     int len = snprintf(buffer, BUFFER_SIZE, "l %d %d\n",
                        grapheDuale->aretesDuales[i]->indiceC1 + 1,
                        grapheDuale->aretesDuales[i]->indiceC2 + 1);
@@ -212,7 +254,8 @@ void writeGDuale(char *path, GrapheDuale *grapheDuale) {
   }
 }
 
-Centroide *calculCentroide(Face *f, Vertex **v) {
+Centroide *calculCentroide(Face *f, Vertex **v)
+{
   Centroide *c = emptyVertex();
   c->x = (v[f->v1 - 1]->x + v[f->v2 - 1]->x + v[f->v3 - 1]->x) / 3;
   c->y = (v[f->v1 - 1]->y + v[f->v2 - 1]->y + v[f->v3 - 1]->y) / 3;
@@ -220,56 +263,72 @@ Centroide *calculCentroide(Face *f, Vertex **v) {
   return c;
 }
 
-bool aAreteCommun(struct Face *f1, struct Face *f2) {
+bool aAreteCommun(struct Face *f1, struct Face *f2)
+{
   int communs = 0;
 
-  if (f1->v1 == f2->v1 || f1->v1 == f2->v2 || f1->v1 == f2->v3) {
+  if (f1->v1 == f2->v1 || f1->v1 == f2->v2 || f1->v1 == f2->v3)
+  {
     communs++;
   }
 
-  if (f1->v2 == f2->v1 || f1->v2 == f2->v2 || f1->v2 == f2->v3) {
+  if (f1->v2 == f2->v1 || f1->v2 == f2->v2 || f1->v2 == f2->v3)
+  {
     communs++;
   }
 
-  if (f1->v3 == f2->v1 || f1->v3 == f2->v2 || f1->v3 == f2->v3) {
+  if (f1->v3 == f2->v1 || f1->v3 == f2->v2 || f1->v3 == f2->v3)
+  {
     communs++;
   }
 
   return communs == 2;
 }
 
-void creationCentroides(GrapheDuale *gd, Maillage *m) {
-  for (int i = 0; i < m->numFaces; i++) {
+void creationCentroides(GrapheDuale *gd, Maillage *m, Graph *g)
+{
+  for (int i = 0; i < m->numFaces; i++)
+  {
     addCentroide(gd, calculCentroide(m->faces[i], m->vertices));
+    addGraphNode(g, i, 0);
   }
 }
 
-void checkValues(Maillage *m) {
-  for (int i = 0; i < m->numFaces; i++) {
+void checkValues(Maillage *m)
+{
+  for (int i = 0; i < m->numFaces; i++)
+  {
     printf("Val %d : %d %d %d \n", i + 1, m->faces[i]->v1, m->faces[i]->v2,
            m->faces[i]->v3);
   }
 
-  for (int i = 0; i < m->numVertices; i++) {
+  for (int i = 0; i < m->numVertices; i++)
+  {
     printf("Val %d : %f %f %f \n", i + 1, m->vertices[i]->x, m->vertices[i]->y,
            m->vertices[i]->z);
   }
   printf("Number faces & vertices : %d %d \n", m->numFaces, m->numVertices);
 }
 
-void checkSelectAretes(SelectAretes *sa) {
-  for (int i = 0; i < sa->numAretes; i++) {
+void checkSelectAretes(SelectAretes *sa)
+{
+  for (int i = 0; i < sa->numAretes; i++)
+  {
     printf("Aretes : %d %d \n", sa->aretes[i]->v1, sa->aretes[i]->v2);
   }
 }
 
-void checkHeapAretes(HeapAretes *ha) {
-  for (int i = 0; i < ha->numNoeuds; i++) {
+void checkHeapAretes(HeapAretes *ha)
+{
+  for (int i = 0; i < ha->numNoeuds; i++)
+  {
     printf("Aretes : %d %d \n", ha->T[i]->v1, ha->T[i]->v2);
   }
 }
-int main(int argc, char *argv[]) {
-  if (argc < 4) {
+int main(int argc, char *argv[])
+{
+  if (argc < 4)
+  {
     raler(0,
           "Usage: %s nom_fichier.obj nomsortant.obj type_algo [selectsort, "
           "heapsort, AVL]",
@@ -278,7 +337,9 @@ int main(int argc, char *argv[]) {
   clock_t start, end;
   double cpu_time_used;
   GrapheDuale *gd = emptyGDuale();
-  if (strcmp(argv[3], "selectsort") == 0) {
+  Graph *graphe = initGraph();
+  if (strcmp(argv[3], "selectsort") == 0)
+  {
     SelectAretes *sa = emptySA();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
 
@@ -287,23 +348,28 @@ int main(int argc, char *argv[]) {
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    creationCentroides(gd, m);
-    generationADuale(sa->aretes, gd, sa->numAretes);
+    creationCentroides(gd, m, graphe);
+    generationADuale(sa->aretes, gd, sa->numAretes, graphe);
     writeGDuale(argv[2], gd);
-  } else if (strcmp(argv[3], "heapsort") == 0) {
+  }
+  else if (strcmp(argv[3], "heapsort") == 0)
+  {
     HeapAretes *ha = emptyHA();
     Maillage *m = parseDualGraphHeap(argv[1], ha);
     start = clock();
-    while (ha->noeudsAlloues != 0) {
+    while (ha->noeudsAlloues != 0)
+    {
       supprimerMax(ha);
     }
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    creationCentroides(gd, m);
-    generationADuale(ha->T, gd, ha->numNoeuds);
+    creationCentroides(gd, m, graphe);
+    generationADuale(ha->T, gd, ha->numNoeuds, graphe);
     writeGDuale(argv[2], gd);
-  } else if (strcmp(argv[3], "AVL") == 0) {
+  }
+  else if (strcmp(argv[3], "AVL") == 0)
+  {
     AVL a = NULL;
     Maillage *m = parseDualGraphAVL(argv[1], &a);
     affichageArbre(a);
