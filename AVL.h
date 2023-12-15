@@ -1,12 +1,14 @@
 #pragma once
 
 #include "structs.h"
+#include "creation.h"
 #include <stdio.h>
 #include <stdlib.h>
 typedef struct noeud noeud;
 typedef noeud *AVL;
 
-struct noeud {
+struct noeud
+{
   Arete *val;
   AVL filsGauche;
   AVL filsDroit;
@@ -23,5 +25,6 @@ void insertionABR(AVL *arbre, Arete *val);
 int deseq(AVL a);
 void affichageArbre(AVL arbre);
 AVL checkDeseq(AVL a);
-void geneADuales(AVL arbre);
 void insertion(AVL *a, Arete *val);
+void geneADuales(Maillage *m, AVL *arbre);
+void addAVLAretes(AVL *avl, Face *f, int numFace);

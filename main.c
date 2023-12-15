@@ -107,48 +107,6 @@ void addSelectArete(SelectAretes *sa, Face *f, int numFace)
   }
 }
 
-void addHeapArete(HeapAretes *ha, Face *f, int numFace)
-{
-  Arete *a = creationHeapArete(ha, f->v1, f->v2, numFace);
-  if (a != NULL)
-  {
-    insertionTas(ha, a);
-  }
-
-  Arete *b = creationHeapArete(ha, f->v1, f->v3, numFace);
-  if (b != NULL)
-  {
-    insertionTas(ha, b);
-  }
-
-  Arete *c = creationHeapArete(ha, f->v2, f->v3, numFace);
-  if (c != NULL)
-  {
-    insertionTas(ha, c);
-  }
-}
-
-void addAVLAretes(AVL *avl, Face *f, int numFace)
-{
-  Arete *a = creationArete(f->v1, f->v2, numFace);
-  if (a != NULL)
-  {
-    insertion(avl, a);
-  }
-
-  Arete *b = creationArete(f->v1, f->v3, numFace);
-  if (b != NULL)
-  {
-    insertion(avl, b);
-  }
-
-  Arete *c = creationArete(f->v2, f->v3, numFace);
-  if (c != NULL)
-  {
-    insertion(avl, c);
-  }
-}
-
 Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
 {
   Maillage *m = emptyMaillage();
@@ -174,6 +132,27 @@ Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
   }
   fclose(fread);
   return m;
+}
+
+void addHeapArete(HeapAretes *ha, Face *f, int numFace)
+{
+  Arete *a = creationHeapArete(ha, f->v1, f->v2, numFace);
+  if (a != NULL)
+  {
+    insertionTas(ha, a);
+  }
+
+  Arete *b = creationHeapArete(ha, f->v1, f->v3, numFace);
+  if (b != NULL)
+  {
+    insertionTas(ha, b);
+  }
+
+  Arete *c = creationHeapArete(ha, f->v2, f->v3, numFace);
+  if (c != NULL)
+  {
+    insertionTas(ha, c);
+  }
 }
 
 Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
@@ -203,7 +182,7 @@ Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
   return m;
 }
 
-Maillage *parseDualGraphAVL(char *path, AVL *avl)
+Maillage *parseDualGraphAVL(char *path)
 {
   Maillage *m = emptyMaillage();
   FILE *fread;
@@ -217,10 +196,6 @@ Maillage *parseDualGraphAVL(char *path, AVL *avl)
       Face *f = emptyFace();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
       addFace(m, f);
-      addAVLAretes(avl, f, m->numFaces - 1);
-      printf("Etat arbre : \n");
-      affichageArbre(*avl);
-      printf("\n \n");
     }
     else if (buffer[0] == 'v')
     {
@@ -370,7 +345,7 @@ int main(int argc, char *argv[])
   else if (strcmp(argv[3], "AVL") == 0)
   {
     AVL a = NULL;
-    Maillage *m = parseDualGraphAVL(argv[1], &a);
-    geneADuales(a);
+    Maillage *m = parseDualGraphAVL(argv[1]);
+    geneADuales(m, &a);
   }
 }
