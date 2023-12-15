@@ -146,7 +146,6 @@ void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph *graphe)
                                        (gd->numAretesDuales + (3 * NB_FACES)));
       }
       gd->aretesDuales[gd->numAretesDuales] = creationADuale(t[i]->indexFace, t[i + 1]->indexFace);
-      addArcGraph(graphe, t[i]->indexFace, t[i + 1]->indexFace);
       gd->numAretesDuales++;
     }
   }

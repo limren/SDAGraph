@@ -290,7 +290,6 @@ void creationCentroides(GrapheDuale *gd, Maillage *m, Graph *g)
   for (int i = 0; i < m->numFaces; i++)
   {
     addCentroide(gd, calculCentroide(m->faces[i], m->vertices));
-    addGraphNode(g, i, 0);
   }
 }
 
@@ -372,6 +371,6 @@ int main(int argc, char *argv[])
   {
     AVL a = NULL;
     Maillage *m = parseDualGraphAVL(argv[1], &a);
-    affichageArbre(a);
+    geneADuales(a);
   }
 }

@@ -1,5 +1,6 @@
 #include "AVL.h"
 #include "tris.h"
+#include "creation.h"
 AVL newArbre(Arete *val, int hauteur, AVL pere) {
   AVL nouvelArbre = malloc(sizeof(struct noeud));
   if (nouvelArbre == NULL) {
@@ -84,18 +85,19 @@ void rotationDroite(AVL *a) {
     filsGauche->pere = pere;
   }
 }
-void rotationGD(AVL a) {
-  if (a != NULL) {
-    rotationGauche(&a->filsGauche);
-    rotationDroite(&a);
-  }
+
+void rotationGD(AVL* a) {
+    if (*a != NULL) {
+        rotationGauche(&(*a)->filsGauche);
+        rotationDroite(a);
+    }
 }
 
-void rotationDG(AVL a) {
-  if (a != NULL) {
-    rotationDroite(&a->filsDroit);
-    rotationGauche(&a);
-  }
+void rotationDG(AVL* a) {
+    if (*a != NULL) {
+        rotationDroite(&(*a)->filsDroit);
+        rotationGauche(a);
+    }
 }
 
 void updateHeight(AVL arbre) {
@@ -152,38 +154,56 @@ int deseq(AVL a) {
 
 void affichageArbre(AVL arbre) {
   if (arbre != NULL) {
-    affichageArbre(arbre->filsGauche);
     printf("%d %d - ", arbre->val->v1, arbre->val->v2);
+    affichageArbre(arbre->filsGauche);
     affichageArbre(arbre->filsDroit);
   }
 }
 
-void checkDeseq(AVL a) {
-  if (a != NULL) {
-    int desequilibrage = deseq(a);
-    if (desequilibrage >= 2 || desequilibrage <= -2) {
-      if (desequilibrage >= 2) {
-        if (deseq(a->filsGauche) < 0) {
-          rotationGD(a);
-        } else {
-          rotationDroite(&a);
-        }
-      } else {
-        if (deseq(a->filsDroit) > 0) {
-          rotationDG(a);
-        } else {
-          affichageArbre(a);
-          rotationGauche(&a);
-        }
+
+
+void geneADuales(AVL arbre)
+{
+  if(arbre != NULL)
+  {
+    if(arbre->filsDroit != NULL && arbre->filsGauche != NULL)
+    {
+      if(sontEquilaventes(arbre->val, arbre->filsGauche->val) || sontEquilaventes(arbre, arbre->filsDroit->val))
+      {
+        printf("good");
       }
-    } else {
-      checkDeseq(a->filsDroit);
-      checkDeseq(a->filsGauche);
-    }
+      geneADuales(arbre->filsDroit);
+      geneADuales(arbre->filsGauche);
+    } 
   }
+}
+
+AVL checkDeseq(AVL a) {
+    if (a != NULL) {
+        int desequilibrage = deseq(a);
+        if (desequilibrage >= 2 || desequilibrage <= -2) {
+            if (desequilibrage >= 2) {
+                if (deseq(a->filsGauche) < 0) {
+                    rotationGD(&a);
+                } else {
+                    rotationDroite(&a);
+                }
+            } else {
+                if (deseq(a->filsDroit) > 0) {
+                    rotationDG(&a);
+                } else {
+                    rotationGauche(&a);
+                }
+            }
+        } else {
+            checkDeseq(a->filsDroit);
+            checkDeseq(a->filsGauche);
+        }
+    }
+    return a;
 }
 
 void insertion(AVL *a, Arete *val) {
   insertionABR(a, val);
-  checkDeseq(*a);
+ *a = checkDeseq(*a);
 }
