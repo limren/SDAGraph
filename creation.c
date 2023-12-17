@@ -48,6 +48,7 @@ AreteDuale *emptyAreteDuale()
 
 int sontEquilaventes(Arete *a, Arete *b)
 {
+  if(a->indexFace == b->indexFace) return 0;
   if (a->v1 == b->v1 && a->v2 == b->v2)
   {
     return 1;
@@ -120,6 +121,7 @@ HeapAretes *emptyHA()
 {
   HeapAretes *t = malloc(sizeof(HeapAretes));
   t->noeudsAlloues = 0;
+  t->numNoeuds = 0;
   t->T = malloc(sizeof(Arete *) * (3 * NB_FACES));
   t->capacite = (3 * NB_FACES);
   return t;
@@ -133,12 +135,14 @@ AreteDuale *creationADuale(int c1, int c2)
   return a;
 }
 
-void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph *graphe)
+void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph * graphe)
 {
-  for (int i = 0; i < size; i++)
+  printf("size : %d", size);
+  for (int i = 0; i < size-1; i++)
   {
     if (sontEquilaventes(t[i], t[i + 1]))
     {
+
       if (gd->numAretesDuales % (3 * NB_FACES) == 0)
       {
         gd->aretesDuales = realloc(gd->aretesDuales,
@@ -147,6 +151,8 @@ void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph *graphe)
       }
       gd->aretesDuales[gd->numAretesDuales] = creationADuale(t[i]->indexFace, t[i + 1]->indexFace);
       gd->numAretesDuales++;
+      addArcGraph(graphe, t[i]->indexFace, t[i+1]->indexFace);
+      addArcGraph(graphe, t[i+1]->indexFace, t[i]->indexFace);
     }
   }
 }

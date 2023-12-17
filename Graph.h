@@ -18,6 +18,7 @@ typedef struct GraphNode
 typedef struct
 {
     int nbGraphNodes;
+    int capacity;
     GraphNode **listAdjacents;
 } Graph;
 
@@ -25,3 +26,5 @@ Graph *initGraph();
 void addGraphNode(Graph *g, int numC, int distance);
 GraphNode *createGraphNode(int numC, int distance);
 void addArcGraph(Graph *g, int numC1, int numC2);
+void parcoursLargeur(Graph * graphe);
+// void parcoursLargeur(Graph * graphe);

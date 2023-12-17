@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
     HeapAretes *ha = emptyHA();
     Maillage *m = parseDualGraphHeap(argv[1], ha);
     start = clock();
-    while (ha->noeudsAlloues != 0)
+    while (ha->noeudsAlloues > 0)
     {
       supprimerMax(ha);
     }
@@ -339,7 +339,19 @@ int main(int argc, char *argv[])
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
     creationCentroides(gd, m, graphe);
-    generationADuale(ha->T, gd, ha->numNoeuds, graphe);
+    // à fix
+    generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
+    printf("nb graph nodes : %d \n", graphe->nbGraphNodes);
+    for(int j = 0; j<graphe->nbGraphNodes;j++)
+    {
+      GraphNode * g = graphe->listAdjacents[j];
+      printf("g nb nexts : %d \n", g->nbNexts);
+      for(int i = 0; i<g->nbNexts; i++)
+      {
+        printf("next : %d \n", g->nexts[i]->numCentroid);
+      } 
+    }
+   
     writeGDuale(argv[2], gd);
   }
   else if (strcmp(argv[3], "AVL") == 0)
@@ -349,4 +361,6 @@ int main(int argc, char *argv[])
     geneADuales(m, &a);
     affichageArbre(a);
   }
+
+  parcoursLargeur(graphe);
 }

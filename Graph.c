@@ -4,6 +4,7 @@ Graph *initGraph()
 {
     Graph *g = malloc(sizeof(GraphNode));
     g->nbGraphNodes = 0;
+    g->capacity = NB_ADJA;
     g->listAdjacents = malloc(sizeof(GraphNode *) * NB_ADJA);
     return g;
 }
@@ -22,39 +23,67 @@ GraphNode *createGraphNode(int numC, int distance)
 void addGraphNode(Graph *g, int numC, int distance)
 {
     GraphNode *node = createGraphNode(numC, distance);
-    if (g->nbGraphNodes % NB_ADJA == 0)
-    {
-
-        g->listAdjacents = realloc(g->listAdjacents, g->nbGraphNodes + NB_ADJA);
-    }
-    g->listAdjacents[g->nbGraphNodes++] = node;
+    g->listAdjacents[numC] = node;
+    g->nbGraphNodes++;
 }
 
+
+// Important à noter que j'ai préféré jouer avec les indices des centroïdes plutôt que de faire des boucles à chaque fois pour trouver le centroïde
 void addArcGraph(Graph *g, int numC1, int numC2)
 {
-    GraphNode *nc2 = NULL;
-    for (int i = 0; i < g->nbGraphNodes; i++)
+    if(numC1 >= g->capacity)
     {
-        if (g->listAdjacents[i]->numCentroid == numC2)
+        while(numC1 >= g->capacity)
         {
-            nc2 = g->listAdjacents[i];
+            g->capacity += NB_ADJA;
         }
+        g->listAdjacents = realloc(g->listAdjacents,sizeof(GraphNode *) * (g->capacity + NB_ADJA));
     }
+    if(numC2 >= g->capacity)
+    {
+        while(numC2 >= g->capacity)
+        {
+            g->capacity += NB_ADJA;
+        }
+        g->listAdjacents = realloc(g->listAdjacents,sizeof(GraphNode *) * (g->capacity + NB_ADJA));
+    }
+    GraphNode * n = g->listAdjacents[numC1];
+    
+    if(n == NULL)
+    {
+        addGraphNode(g, numC1, 0);
+        n = g->listAdjacents[numC1];
+    }
+    GraphNode *nc2 = g->listAdjacents[numC2];
     if (nc2 == NULL)
     {
-        printf("erreur le sang");
+        addGraphNode(g, numC2, 0);
+        nc2 = g->listAdjacents[numC2];
     }
-    for (int i = 0; i < g->nbGraphNodes; i++)
-    {
-        GraphNode *n = g->listAdjacents[i];
-        if (n->numCentroid == numC1)
-        {
+    n->nexts[n->nbNexts++] = nc2;
+}
 
-            if (n->nbNexts == 2)
-            {
-                printf("erreur ici");
+
+void parcoursLargeur(Graph * graphe){
+    printf("parcours largeur \n");
+    int * marque = malloc(sizeof(int) * graphe->nbGraphNodes);
+    for(int i = 0; i<graphe->nbGraphNodes; i++){
+        marque[i] = 0;
+    }
+    GraphNode ** file = malloc(sizeof(GraphNode*) * graphe->nbGraphNodes);
+    int tete = 0;
+    int queue = 0;
+    file[queue++] = graphe->listAdjacents[0];
+    marque[0] = 1;
+    while(tete != queue){
+        GraphNode * sommet = file[tete++];
+        printf("sommet : %d \n", sommet->numCentroid);
+        for(int i = 0; i<graphe->listAdjacents[sommet->numCentroid]->nbNexts; i++){
+            GraphNode * voisin = graphe->listAdjacents[sommet->numCentroid]->nexts[i];
+            if(marque[voisin->numCentroid] == 0){
+                marque[voisin->numCentroid] = 1;
+                file[queue++] = voisin;
             }
-            n->nexts[n->nbNexts++] = nc2;
         }
     }
 }
