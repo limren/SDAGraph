@@ -347,5 +347,6 @@ int main(int argc, char *argv[])
     AVL a = NULL;
     Maillage *m = parseDualGraphAVL(argv[1]);
     geneADuales(m, &a);
+    affichageArbre(a);
   }
 }
