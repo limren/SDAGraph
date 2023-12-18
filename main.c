@@ -208,15 +208,19 @@ Maillage *parseDualGraphAVL(char *path)
   return m;
 }
 
-void writeGDuale(char *path, GrapheDuale *grapheDuale)
+void writeGDuale(char *path, GrapheDuale *grapheDuale, Graph * g, int largestDistance)
 {
   int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   char buffer[BUFFER_SIZE];
   for (int i = 0; i < grapheDuale->numCentroides; i++)
   {
+    GraphNode * node = g->listAdjacents[i];
+    // Calcule de la couleur, ici on prend largest distance ayant 1 comme couleur et ainsi on fait un produit en croix
+
+    float ratio = (float)node->distance/largestDistance;
     int len = snprintf(
-        buffer, BUFFER_SIZE, "v %f %f %f\n", grapheDuale->centroides[i]->x,
-        grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z);
+        buffer, BUFFER_SIZE, "v %f %f %f %f %f %f\n", grapheDuale->centroides[i]->x,
+        grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z, ratio, ratio, ratio);
     write(fdWrite, buffer, len);
   }
 
@@ -324,7 +328,8 @@ int main(int argc, char *argv[])
     printf("CPU Time: %f seconds\n", cpu_time_used);
     creationCentroides(gd, m, graphe);
     generationADuale(sa->aretes, gd, sa->numAretes, graphe);
-    writeGDuale(argv[2], gd);
+    int largestDistance = parcoursLargeur(graphe);
+    writeGDuale(argv[2], gd, graphe, largestDistance);
   }
   else if (strcmp(argv[3], "heapsort") == 0)
   {
@@ -341,18 +346,8 @@ int main(int argc, char *argv[])
     creationCentroides(gd, m, graphe);
     // à fix
     generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
-    printf("nb graph nodes : %d \n", graphe->nbGraphNodes);
-    for(int j = 0; j<graphe->nbGraphNodes;j++)
-    {
-      GraphNode * g = graphe->listAdjacents[j];
-      printf("g nb nexts : %d \n", g->nbNexts);
-      for(int i = 0; i<g->nbNexts; i++)
-      {
-        printf("next : %d \n", g->nexts[i]->numCentroid);
-      } 
-    }
-   
-    writeGDuale(argv[2], gd);
+    int largestDistance = parcoursLargeur(graphe);
+    writeGDuale(argv[2], gd, graphe, largestDistance);
   }
   else if (strcmp(argv[3], "AVL") == 0)
   {
@@ -362,5 +357,4 @@ int main(int argc, char *argv[])
     affichageArbre(a);
   }
 
-  parcoursLargeur(graphe);
 }

@@ -64,26 +64,47 @@ void addArcGraph(Graph *g, int numC1, int numC2)
 }
 
 
-void parcoursLargeur(Graph * graphe){
+int parcoursLargeur(Graph *graphe) {
     printf("parcours largeur \n");
-    int * marque = malloc(sizeof(int) * graphe->nbGraphNodes);
-    for(int i = 0; i<graphe->nbGraphNodes; i++){
+
+    int *marque = malloc(sizeof(int) * graphe->nbGraphNodes);
+    int *distance = malloc(sizeof(int) * graphe->nbGraphNodes);
+    int largestDistance = 0;
+    for (int i = 0; i < graphe->nbGraphNodes; i++) {
         marque[i] = 0;
+        distance[i] = -1; // Initialisez toutes les distances à -1 (non atteintes)
     }
-    GraphNode ** file = malloc(sizeof(GraphNode*) * graphe->nbGraphNodes);
+
+    GraphNode **file = malloc(sizeof(GraphNode *) * graphe->nbGraphNodes);
     int tete = 0;
     int queue = 0;
+
     file[queue++] = graphe->listAdjacents[0];
     marque[0] = 1;
-    while(tete != queue){
-        GraphNode * sommet = file[tete++];
-        printf("sommet : %d \n", sommet->numCentroid);
-        for(int i = 0; i<graphe->listAdjacents[sommet->numCentroid]->nbNexts; i++){
-            GraphNode * voisin = graphe->listAdjacents[sommet->numCentroid]->nexts[i];
-            if(marque[voisin->numCentroid] == 0){
+    distance[0] = 0;
+
+    while (tete != queue) {
+        GraphNode *sommet = file[tete++];
+
+        for (int i = 0; i < sommet->nbNexts; i++) {
+            GraphNode *voisin = sommet->nexts[i];
+            if (marque[voisin->numCentroid] == 0) {
                 marque[voisin->numCentroid] = 1;
+                distance[voisin->numCentroid] = distance[sommet->numCentroid] + 1;
+                voisin->distance = distance[voisin->numCentroid];
+                if(voisin->distance > largestDistance)
+                {
+                    largestDistance = voisin->distance;
+                }
                 file[queue++] = voisin;
             }
         }
     }
+
+    printf("largest distance : %d \n", largestDistance);
+    free(marque);
+    free(distance);
+    free(file);
+
+    return largestDistance;
 }
