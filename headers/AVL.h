@@ -27,3 +27,4 @@ void affichageArbre(AVL arbre);
 void checkDeseq(AVL * a);
 void geneADuales(Maillage *m, AVL *arbre, GrapheDuale * gd, Graphe * graphe);
 void addAVLAretes(AVL *avl, Face *f, int numFace, GrapheDuale * gd, Graphe * graphe);
+void freeAVL(AVL *a);

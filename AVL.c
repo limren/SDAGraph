@@ -315,3 +315,13 @@ void checkDeseq(AVL * a)
   }
 }
 
+
+void freeAVL(AVL *a)
+{
+  if (*a != NULL)
+  {
+    freeAVL(&(*a)->filsGauche);
+    freeAVL(&(*a)->filsDroit);
+    free(*a);
+  }
+}

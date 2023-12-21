@@ -294,6 +294,13 @@ int main(int argc, char *argv[])
     generationADuale(sa->aretes, gd, sa->numAretes, graphe);
     int plusGrandeDistance = parcoursLargeur(graphe);
     ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
+    for(int i =0; i<sa->numAretes; i++)
+    {
+      if(sa->aretes[i] != NULL)
+        free(sa->aretes[i]);
+    }
+    free(sa->aretes);
+    free(sa);
   }
   else if (strcmp(argv[3], "heapsort") == 0)
   {
@@ -314,6 +321,11 @@ int main(int argc, char *argv[])
     generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
     int plusGrandeDistance = parcoursLargeur(graphe);
     ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
+    free(ha->T);
+    free(ha);
+    free(m->faces);
+    free(m->sommets);
+    free(m);
   }
   else if (strcmp(argv[3], "AVL") == 0)
   {
@@ -323,12 +335,15 @@ int main(int argc, char *argv[])
     affichageArbre(a);
     int plusGrandeDistance = parcoursLargeur(graphe);
     ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
+    free(m->faces);
+    free(m->sommets);
+    free(m);
+    freeAVL(&a);
   } else if(strcmp(argv[3], "hashmap") == 0)
   {
     SelectAretes *sa = SAVide();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
     creationCentroides(gd, m);
-    printf("size num aretes : %d\n", sa->numAretes);
     const unsigned initial_size = sa->numAretes*10;
     struct hashmap_s hashmap;
     if (0 != hashmap_create(initial_size, &hashmap)) {
@@ -345,5 +360,29 @@ int main(int argc, char *argv[])
     int distanceLaPlusGrande = parcoursLargeur(graphe);
     ecritureGDuale(argv[2], gd, graphe, distanceLaPlusGrande);
     hashmap_destroy(&hashmap);
+    for(int i =0; i<sa->numAretes; i++)
+    {
+      if(sa->aretes[i] != NULL)
+        free(sa->aretes[i]);
+    }
+    free(sa->aretes);
+    free(sa);
   }
+  for(int i = 0; i<gd->numCentroides; i++)
+  {
+    if(gd->centroides != NULL)
+      free(gd->centroides[i]);
+  }
+  free(gd->centroides);
+  for(int i = 0; i<gd->numAretesDuales; i++)
+  {
+    if(gd->aretesDuales != NULL)
+      free(gd->aretesDuales[i]);
+  }
+  for(int i = 0; i<graphe->nbGraphNodes; i++)
+  {
+    if(graphe->listAdjacents[i] != NULL)
+      free(graphe->listAdjacents[i]);
+  }
+  free(graphe->listAdjacents);
 }
