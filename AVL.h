@@ -25,6 +25,6 @@ void insertionAVL(AVL *arbre, Arete *val);
 int deseq(AVL a);
 void affichageArbre(AVL arbre);
 void checkDeseq(AVL * a);
-void insertion(AVL *a, Arete *val);
+// void insertion(AVL *a, Arete *val);
 void geneADuales(Maillage *m, AVL *arbre);
 void addAVLAretes(AVL *avl, Face *f, int numFace);

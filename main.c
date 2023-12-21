@@ -291,13 +291,11 @@ void addEntryHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd
     perror("Erreur hashmap null");
     exit(EXIT_FAILURE);
   }
-  Arete * areteEquiv = hashmap_get(hashmap, key, strlen(key));
-  // printf("arete : %d %d - index face : %d \n", arete->v1, arete->v2, arete->indexFace);
+  Arete * areteEquiv = hashmap_get(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)));
   if(areteEquiv != NULL)
   {
     // comme hashmap_get peut renvoyer une valeur même si l'entrée n'existe pas, on vérifie que les deux arêtes sont bien équivalentes
     if(sontEquilaventes(arete, areteEquiv)){
-      // printf("arete equiv : %d %d - arete : %d %d - index faces : eq %d - %d \n", areteEquiv->v1, areteEquiv->v2, arete->v1, arete->v2,areteEquiv->indexFace, arete->indexFace);
       if (gd->numAretesDuales % (3 * NB_FACES) == 0)
       {
         gd->aretesDuales = realloc(gd->aretesDuales, sizeof(AreteDuale) * (gd->numAretesDuales + (3 * NB_FACES)));
@@ -306,17 +304,11 @@ void addEntryHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd
       gd->numAretesDuales++;
       addArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
       addArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
-      
-      // On peut enlever la key associée aux deux arêtes trouvées pour ne pas surcharger la table
-      // hashmap_remove(hashmap, key, strlen(key));
     } else {
-      // printf("arrete equiv : %d %d - arete : %d %d - index faces : eq : %d - %d \n", areteEquiv->v1, areteEquiv->v2, arete->v1, arete->v2, areteEquiv->indexFace, arete->indexFace);
-      hashmap_put(hashmap, key, strlen(key), arete);
+      hashmap_put(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)), arete);
     }
   } else {
-    // printf("nothing \n");
-    hashmap_put(hashmap, key, strlen(key), arete);
-
+    hashmap_put(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)), arete);
   }
 }
 
@@ -378,7 +370,7 @@ int main(int argc, char *argv[])
     Maillage *m = parseDualGraphSelect(argv[1], sa);
     creationCentroides(gd, m);
     printf("size num aretes : %d\n", sa->numAretes);
-    const unsigned initial_size = sa->numAretes*200;
+    const unsigned initial_size = sa->numAretes*10;
     struct hashmap_s hashmap;
     if (0 != hashmap_create(initial_size, &hashmap)) {
       exit(EXIT_FAILURE);
@@ -391,7 +383,7 @@ int main(int argc, char *argv[])
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    int largestDistance = 0;
+    int largestDistance = parcoursLargeur(graphe);
     writeGDuale(argv[2], gd, graphe, largestDistance);
     hashmap_destroy(&hashmap);
   }

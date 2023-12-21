@@ -14,7 +14,7 @@ GraphNode *createGraphNode(int numC, int distance)
     GraphNode *node = malloc(sizeof(GraphNode));
     node->numCentroid = numC;
     node->nbNexts = 0;
-    node->nexts = malloc(sizeof(GraphNode *) * 100);
+    node->nexts = malloc(sizeof(GraphNode *) *  NB_VOISINS);
     node->distance = distance;
     return node;
 }
@@ -31,12 +31,11 @@ void addGraphNode(Graph *g, int numC, int distance)
 // Important à noter que j'ai préféré jouer avec les indices des centroïdes plutôt que de faire des boucles à chaque fois pour trouver le centroïde
 void addArcGraph(Graph *g, int numC1, int numC2)
 {
-    printf("add %d %d cap : %d  \n", numC1, numC2, g->capacity);
     if(numC1 >= g->capacity)
     {
         while(numC1 >= g->capacity)
         {
-            g->capacity += NB_ADJA;
+            g->capacity *= 2;
         }
         g->listAdjacents = realloc(g->listAdjacents, sizeof(GraphNode *) * (g->capacity));
     }
@@ -44,7 +43,7 @@ void addArcGraph(Graph *g, int numC1, int numC2)
     {
         while(numC2 >= g->capacity)
         {
-            g->capacity += NB_ADJA;
+            g->capacity *= 2;
         }
         g->listAdjacents = realloc(g->listAdjacents, sizeof(GraphNode *) * (g->capacity));
     }
@@ -55,25 +54,18 @@ void addArcGraph(Graph *g, int numC1, int numC2)
         addGraphNode(g, numC1, 0);
         n = g->listAdjacents[numC1];
     }
-    GraphNode *nc2 = g->listAdjacents[numC2];
 
+    GraphNode *nc2 = g->listAdjacents[numC2];
     if (nc2 == NULL)
     {
         addGraphNode(g, numC2, 0);
         nc2 = g->listAdjacents[numC2];
     }
     n->nexts[n->nbNexts++] = nc2;
-    
-    if(n->nbNexts > 3)
-    {
-        printf("nb nexts : %d \n", n->nbNexts);
-    }
 }
 
 
 int parcoursLargeur(Graph *graphe) {
-    printf("parcours largeur \n");
-
     int *marque = malloc(sizeof(int) * graphe->nbGraphNodes);
     int *distance = malloc(sizeof(int) * graphe->nbGraphNodes);
     int largestDistance = 0;

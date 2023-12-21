@@ -128,31 +128,17 @@ void rotationDG(AVL *a)
   }
 }
 
-void updateHeight(AVL arbre)
+void updateHeight(AVL *arbre)
 {
-  if (arbre != NULL)
+  if (*arbre != NULL)
   {
-    int hFG = (arbre->filsGauche != NULL) ? arbre->filsGauche->hauteur : -1;
-    int hFD = (arbre->filsDroit != NULL) ? arbre->filsDroit->hauteur : -1;
+    int hFG = ((*arbre)->filsGauche != NULL) ? (*arbre)->filsGauche->hauteur : -1;
+    int hFD = ((*arbre)->filsDroit != NULL) ? (*arbre)->filsDroit->hauteur : -1;
 
-    arbre->hauteur = max(hFG, hFD) + 1;
-    updateHeight(arbre->pere);
+    (*arbre)->hauteur = max(hFG, hFD) + 1;
+    updateHeight(&(*arbre)->pere);
   }
 }
-
-// void updateHeight(AVL arbre)
-// {
-//   AVL current = arbre;
-//   while (current != NULL)
-//   {
-//     int hFG = (current->filsGauche != NULL) ? current->filsGauche->hauteur : -1;
-//     int hFD = (current->filsDroit != NULL) ? current->filsDroit->hauteur : -1;
-
-//     current->hauteur = max(hFG, hFD) + 1;
-//     current = current->pere;
-//   }
-// }
-
 
 void insertionAVL(AVL *arbre, Arete *val)
 {
@@ -168,8 +154,8 @@ void insertionAVL(AVL *arbre, Arete *val)
     {
       AVL fils = newArbre(val, 0, *arbre);
       (*arbre)->filsDroit = fils;
-      updateHeight((*arbre));
-      checkDeseq(&fils);
+      updateHeight(arbre);
+      checkDeseq(&(*arbre)->filsDroit);
     }
     else
     {
@@ -182,8 +168,8 @@ void insertionAVL(AVL *arbre, Arete *val)
     {
       AVL fils = newArbre(val, 0, *arbre);
       (*arbre)->filsGauche = fils;
-      updateHeight((*arbre));
-      checkDeseq(&fils);
+      updateHeight(arbre);
+      checkDeseq(&(*arbre)->filsGauche);
     }
     else
     {

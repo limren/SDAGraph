@@ -10,7 +10,8 @@
     "stdio.h": "c",
     "tris.h": "c",
     "random": "c",
-    "graph.h": "c"
+    "graph.h": "c",
+    "*.inc": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

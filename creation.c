@@ -48,7 +48,7 @@ AreteDuale *emptyAreteDuale()
 
 int sontEquilaventes(Arete *a, Arete *b)
 {
-  if(a->indexFace == b->indexFace) return 0;
+  // if(a->indexFace == b->indexFace) return 0;
   if (a->v1 == b->v1 && a->v2 == b->v2)
   {
     return 1;
