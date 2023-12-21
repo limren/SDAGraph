@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -g
 LDFLAGS =
 
 SOURCES = main.c creation.c tris.c AVL.c Graph.c
-HEADERS = const.h structs.h creation.h tris.h AVL.h Graph.h
+HEADERS = const.h structs.h creation.h tris.h AVL.h Graph.h hashmap.h
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = main
 
@@ -13,7 +13,7 @@ EXECUTABLE = main
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -g -o $@ $^
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<

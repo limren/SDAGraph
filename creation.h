@@ -11,6 +11,7 @@ Arete *creationSelectArete(SelectAretes *sa, int v1, int v2, int numFace);
 Arete *creationHeapArete(HeapAretes *ha, int v1, int v2, int numFace);
 int sontEquilaventes(Arete *a, Arete *b);
 SelectAretes *emptySA();
+AreteDuale *creationADuale(int c1, int c2);
 HeapAretes *emptyHA();
 void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph * graphe);
 Arete *creationArete(int v1, int v2, int numFace);

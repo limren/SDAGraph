@@ -140,7 +140,21 @@ void updateHeight(AVL arbre)
   }
 }
 
-void insertionABR(AVL *arbre, Arete *val)
+// void updateHeight(AVL arbre)
+// {
+//   AVL current = arbre;
+//   while (current != NULL)
+//   {
+//     int hFG = (current->filsGauche != NULL) ? current->filsGauche->hauteur : -1;
+//     int hFD = (current->filsDroit != NULL) ? current->filsDroit->hauteur : -1;
+
+//     current->hauteur = max(hFG, hFD) + 1;
+//     current = current->pere;
+//   }
+// }
+
+
+void insertionAVL(AVL *arbre, Arete *val)
 {
   if (*arbre == NULL)
   {
@@ -155,10 +169,11 @@ void insertionABR(AVL *arbre, Arete *val)
       AVL fils = newArbre(val, 0, *arbre);
       (*arbre)->filsDroit = fils;
       updateHeight((*arbre));
+      checkDeseq(&fils);
     }
     else
     {
-      insertionABR(&(*arbre)->filsDroit, val);
+      insertionAVL(&(*arbre)->filsDroit, val);
     }
   }
   else
@@ -168,10 +183,11 @@ void insertionABR(AVL *arbre, Arete *val)
       AVL fils = newArbre(val, 0, *arbre);
       (*arbre)->filsGauche = fils;
       updateHeight((*arbre));
+      checkDeseq(&fils);
     }
     else
     {
-      insertionABR(&(*arbre)->filsGauche, val);
+      insertionAVL(&(*arbre)->filsGauche, val);
     }
   }
 }
@@ -213,19 +229,19 @@ void addAVLAretes(AVL *avl, Face *f, int numFace)
   Arete *a = creationArete(f->v1, f->v2, numFace);
   if (a != NULL)
   {
-    insertion(avl, a);
+    insertionAVL(avl, a);
   }
 
   Arete *b = creationArete(f->v1, f->v3, numFace);
   if (b != NULL)
   {
-    insertion(avl, b);
+    insertionAVL(avl, b);
   }
 
   Arete *c = creationArete(f->v2, f->v3, numFace);
   if (c != NULL)
   {
-    insertion(avl, c);
+    insertionAVL(avl, c);
   }
 }
 
@@ -253,50 +269,44 @@ void geneADuales(Maillage *m, AVL *arbre)
   {
     addAVLAretes(arbre, m->faces[i], i);
   }
-  parcoursAVL(*arbre);
 }
 
-AVL checkDeseq(AVL a)
+void checkDeseq(AVL * a)
 {
   if (a != NULL)
   {
-    int desequilibrage = deseq(a);
+    int desequilibrage = deseq(*a);
     if (desequilibrage >= 2 || desequilibrage <= -2)
     {
       if (desequilibrage >= 2)
       {
-        if (deseq(a->filsGauche) < 0)
+        if (deseq((*a)->filsGauche) < 0)
         {
-          rotationGD(&a);
+          rotationGD(a);
         }
         else
         {
-          rotationDroite(&a);
+          rotationDroite(a);
         }
       }
       else
       {
-        if (deseq(a->filsDroit) > 0)
+        if (deseq((*a)->filsDroit) > 0)
         {
-          rotationDG(&a);
+          rotationDG(a);
         }
         else
         {
-          rotationGauche(&a);
+          rotationGauche(a);
         }
       }
     }
     else
     {
-      checkDeseq(a->filsDroit);
-      checkDeseq(a->filsGauche);
+      if ((*a)->pere != NULL) {
+        checkDeseq(&((*a)->pere));
+      }
     }
   }
-  return a;
 }
 
-void insertion(AVL *a, Arete *val)
-{
-  insertionABR(a, val);
-  *a = checkDeseq(*a);
-}

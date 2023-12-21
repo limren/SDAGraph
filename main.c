@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "tris.h"
 #include "Graph.h"
+#include "hashmap/hashmap.h"
 #include <fcntl.h>
 #include <math.h>
 #include <stdarg.h>
@@ -16,6 +17,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#define MAX_SIZE 255
 #define CHK(op)     \
   do                \
   {                 \
@@ -216,8 +218,11 @@ void writeGDuale(char *path, GrapheDuale *grapheDuale, Graph * g, int largestDis
   {
     GraphNode * node = g->listAdjacents[i];
     // Calcule de la couleur, ici on prend largest distance ayant 1 comme couleur et ainsi on fait un produit en croix
-
-    float ratio = (float)node->distance/largestDistance;
+    float ratio = 0;
+    if(largestDistance != 0)
+    {
+      ratio = (float)node->distance/largestDistance;
+    }
     int len = snprintf(
         buffer, BUFFER_SIZE, "v %f %f %f %f %f %f\n", grapheDuale->centroides[i]->x,
         grapheDuale->centroides[i]->y, grapheDuale->centroides[i]->z, ratio, ratio, ratio);
@@ -264,7 +269,7 @@ bool aAreteCommun(struct Face *f1, struct Face *f2)
   return communs == 2;
 }
 
-void creationCentroides(GrapheDuale *gd, Maillage *m, Graph *g)
+void creationCentroides(GrapheDuale *gd, Maillage *m)
 {
   for (int i = 0; i < m->numFaces; i++)
   {
@@ -272,50 +277,63 @@ void creationCentroides(GrapheDuale *gd, Maillage *m, Graph *g)
   }
 }
 
-void checkValues(Maillage *m)
+void addEntryHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd, Graph * graphe)
 {
-  for (int i = 0; i < m->numFaces; i++)
+  char key[MAX_SIZE];
+  int nb = snprintf(key, MAX_SIZE, "%d-%d", arete->v1, arete->v2);
+  if(nb >= MAX_SIZE)
   {
-    printf("Val %d : %d %d %d \n", i + 1, m->faces[i]->v1, m->faces[i]->v2,
-           m->faces[i]->v3);
+    perror("Erreur snprintf key");
+    exit(EXIT_FAILURE);
   }
+  if(hashmap == NULL)
+  {
+    perror("Erreur hashmap null");
+    exit(EXIT_FAILURE);
+  }
+  Arete * areteEquiv = hashmap_get(hashmap, key, strlen(key));
+  // printf("arete : %d %d - index face : %d \n", arete->v1, arete->v2, arete->indexFace);
+  if(areteEquiv != NULL)
+  {
+    // comme hashmap_get peut renvoyer une valeur même si l'entrée n'existe pas, on vérifie que les deux arêtes sont bien équivalentes
+    if(sontEquilaventes(arete, areteEquiv)){
+      // printf("arete equiv : %d %d - arete : %d %d - index faces : eq %d - %d \n", areteEquiv->v1, areteEquiv->v2, arete->v1, arete->v2,areteEquiv->indexFace, arete->indexFace);
+      if (gd->numAretesDuales % (3 * NB_FACES) == 0)
+      {
+        gd->aretesDuales = realloc(gd->aretesDuales, sizeof(AreteDuale) * (gd->numAretesDuales + (3 * NB_FACES)));
+      }
+      gd->aretesDuales[gd->numAretesDuales] = creationADuale(areteEquiv->indexFace, arete->indexFace);
+      gd->numAretesDuales++;
+      addArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
+      addArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
+      
+      // On peut enlever la key associée aux deux arêtes trouvées pour ne pas surcharger la table
+      // hashmap_remove(hashmap, key, strlen(key));
+    } else {
+      // printf("arrete equiv : %d %d - arete : %d %d - index faces : eq : %d - %d \n", areteEquiv->v1, areteEquiv->v2, arete->v1, arete->v2, areteEquiv->indexFace, arete->indexFace);
+      hashmap_put(hashmap, key, strlen(key), arete);
+    }
+  } else {
+    // printf("nothing \n");
+    hashmap_put(hashmap, key, strlen(key), arete);
 
-  for (int i = 0; i < m->numVertices; i++)
-  {
-    printf("Val %d : %f %f %f \n", i + 1, m->vertices[i]->x, m->vertices[i]->y,
-           m->vertices[i]->z);
   }
-  printf("Number faces & vertices : %d %d \n", m->numFaces, m->numVertices);
 }
 
-void checkSelectAretes(SelectAretes *sa)
-{
-  for (int i = 0; i < sa->numAretes; i++)
-  {
-    printf("Aretes : %d %d \n", sa->aretes[i]->v1, sa->aretes[i]->v2);
-  }
-}
-
-void checkHeapAretes(HeapAretes *ha)
-{
-  for (int i = 0; i < ha->numNoeuds; i++)
-  {
-    printf("Aretes : %d %d \n", ha->T[i]->v1, ha->T[i]->v2);
-  }
-}
 int main(int argc, char *argv[])
 {
   if (argc < 4)
   {
     raler(0,
           "Usage: %s nom_fichier.obj nomsortant.obj type_algo [selectsort, "
-          "heapsort, AVL]",
+          "heapsort, AVL, hashmap]",
           argv[0]);
   }
   clock_t start, end;
   double cpu_time_used;
   GrapheDuale *gd = emptyGDuale();
   Graph *graphe = initGraph();
+ 
   if (strcmp(argv[3], "selectsort") == 0)
   {
     SelectAretes *sa = emptySA();
@@ -326,7 +344,7 @@ int main(int argc, char *argv[])
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    creationCentroides(gd, m, graphe);
+    creationCentroides(gd, m);
     generationADuale(sa->aretes, gd, sa->numAretes, graphe);
     int largestDistance = parcoursLargeur(graphe);
     writeGDuale(argv[2], gd, graphe, largestDistance);
@@ -343,8 +361,7 @@ int main(int argc, char *argv[])
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    creationCentroides(gd, m, graphe);
-    // à fix
+    creationCentroides(gd, m);
     generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
     int largestDistance = parcoursLargeur(graphe);
     writeGDuale(argv[2], gd, graphe, largestDistance);
@@ -355,6 +372,27 @@ int main(int argc, char *argv[])
     Maillage *m = parseDualGraphAVL(argv[1]);
     geneADuales(m, &a);
     affichageArbre(a);
+  } else if(strcmp(argv[3], "hashmap") == 0)
+  {
+    SelectAretes *sa = emptySA();
+    Maillage *m = parseDualGraphSelect(argv[1], sa);
+    creationCentroides(gd, m);
+    printf("size num aretes : %d\n", sa->numAretes);
+    const unsigned initial_size = sa->numAretes*200;
+    struct hashmap_s hashmap;
+    if (0 != hashmap_create(initial_size, &hashmap)) {
+      exit(EXIT_FAILURE);
+    }
+    start = clock();
+    for(int i = 0; i<sa->numAretes; i++)
+    {
+      addEntryHashmap(&hashmap, sa->aretes[i], gd, graphe);
+    }
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("CPU Time: %f seconds\n", cpu_time_used);
+    int largestDistance = 0;
+    writeGDuale(argv[2], gd, graphe, largestDistance);
+    hashmap_destroy(&hashmap);
   }
-
 }

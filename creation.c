@@ -112,8 +112,16 @@ Arete *creationArete(int v1, int v2, int numFace)
 {
   Arete *a = malloc(sizeof(Arete));
   a->indexFace = numFace;
-  a->v1 = v1;
-  a->v2 = v2;
+  if (v1 > v2)
+  {
+    a->v1 = v2;
+    a->v2 = v1;
+  }
+  else
+  {
+    a->v1 = v1;
+    a->v2 = v2;
+  }
   return a;
 }
 
@@ -137,7 +145,6 @@ AreteDuale *creationADuale(int c1, int c2)
 
 void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph * graphe)
 {
-  printf("size : %d", size);
   for (int i = 0; i < size-1; i++)
   {
     if (sontEquilaventes(t[i], t[i + 1]))
