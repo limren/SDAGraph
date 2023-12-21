@@ -1,9 +1,11 @@
-#include "AVL.h"
-#include "const.h"
-#include "creation.h"
-#include "structs.h"
-#include "tris.h"
-#include "Graph.h"
+#include "headers/AVL.h"
+#include "headers/const.h"
+#include "headers/creation.h"
+#include "headers/structs.h"
+#include "headers/tris.h"
+#include "headers/Graphe.h"
+#include "headers/Selection.h"
+#include "headers/Tas.h"
 #include "hashmap/hashmap.h"
 #include <fcntl.h>
 #include <math.h>
@@ -18,32 +20,8 @@
 #include <time.h>
 #include <unistd.h>
 #define MAX_SIZE 255
-#define CHK(op)     \
-  do                \
-  {                 \
-    if ((op) == -1) \
-    {               \
-      perror(#op);  \
-      exit(1);      \
-    }               \
-  } while (0)
 
-noreturn void raler(int syserr, const char *msg, ...)
-{
-  va_list ap;
-
-  va_start(ap, msg);
-  vfprintf(stderr, msg, ap);
-  fprintf(stderr, "\n");
-  va_end(ap);
-
-  if (syserr == 1)
-    perror("");
-
-  exit(EXIT_FAILURE);
-}
-
-void addFace(Maillage *m, Face *f)
+void ajoutFace(Maillage *m, Face *f)
 {
   if (m->numFaces % NB_FACES == 0)
   {
@@ -54,17 +32,17 @@ void addFace(Maillage *m, Face *f)
   m->numFaces++;
 }
 
-void addVertex(Maillage *m, Vertex *v)
+void ajoutSommet(Maillage *m, Vertex *v)
 {
-  if (m->numVertices % NB_VERTICES == 0)
+  if (m->numSommets % NB_VERTICES == 0)
   {
-    m->vertices = realloc(m->vertices, sizeof(struct Vertex) *
-                                           (m->numVertices + NB_VERTICES));
+    m->sommets = realloc(m->sommets, sizeof(struct Vertex) *
+                                           (m->numSommets + NB_VERTICES));
   }
-  m->vertices[m->numVertices] = v;
-  m->numVertices++;
+  m->sommets[m->numSommets] = v;
+  m->numSommets++;
 }
-void addCentroide(GrapheDuale *m, Centroide *c)
+void ajoutCentroide(GrapheDuale *m, Centroide *c)
 {
   if (m->numCentroides % NB_FACES == 0)
   {
@@ -87,31 +65,10 @@ void addAreteDuale(GrapheDuale *gd, AreteDuale *a)
   gd->numAretesDuales++;
 }
 
-void addSelectArete(SelectAretes *sa, Face *f, int numFace)
-{
-
-  Arete *a = creationSelectArete(sa, f->v1, f->v2, numFace);
-  if (a != NULL)
-  {
-    sa->aretes[sa->numAretes++] = a;
-  }
-
-  Arete *b = creationSelectArete(sa, f->v1, f->v3, numFace);
-  if (b != NULL)
-  {
-    sa->aretes[sa->numAretes++] = b;
-  }
-
-  Arete *c = creationSelectArete(sa, f->v2, f->v3, numFace);
-  if (c != NULL)
-  {
-    sa->aretes[sa->numAretes++] = c;
-  }
-}
 
 Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
 {
-  Maillage *m = emptyMaillage();
+  Maillage *m = maillageVide();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
@@ -120,46 +77,25 @@ Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
   {
     if (buffer[0] == 'f')
     {
-      Face *f = emptyFace();
+      Face *f = faceVide();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
-      addFace(m, f);
-      addSelectArete(sa, f, m->numFaces - 1);
+      ajoutFace(m, f);
+      ajoutAreteSelection(sa, f, m->numFaces - 1);
     }
     else if (buffer[0] == 'v')
     {
-      Vertex *v = emptyVertex();
+      Vertex *v = sommetVide();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
-      addVertex(m, v);
+      ajoutSommet(m, v);
     }
   }
   fclose(fread);
   return m;
 }
 
-void addHeapArete(HeapAretes *ha, Face *f, int numFace)
-{
-  Arete *a = creationHeapArete(ha, f->v1, f->v2, numFace);
-  if (a != NULL)
-  {
-    insertionTas(ha, a);
-  }
-
-  Arete *b = creationHeapArete(ha, f->v1, f->v3, numFace);
-  if (b != NULL)
-  {
-    insertionTas(ha, b);
-  }
-
-  Arete *c = creationHeapArete(ha, f->v2, f->v3, numFace);
-  if (c != NULL)
-  {
-    insertionTas(ha, c);
-  }
-}
-
 Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
 {
-  Maillage *m = emptyMaillage();
+  Maillage *m = maillageVide();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
@@ -168,16 +104,15 @@ Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
   {
     if (buffer[0] == 'f')
     {
-      Face *f = emptyFace();
+      Face *f = faceVide();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
-      addFace(m, f);
-      addHeapArete(ha, f, m->numFaces - 1);
+      ajoutFace(m, f);
     }
     else if (buffer[0] == 'v')
     {
-      Vertex *v = emptyVertex();
+      Vertex *v = sommetVide();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
-      addVertex(m, v);
+      ajoutSommet(m, v);
     }
   }
   fclose(fread);
@@ -186,7 +121,7 @@ Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
 
 Maillage *parseDualGraphAVL(char *path)
 {
-  Maillage *m = emptyMaillage();
+  Maillage *m = maillageVide();
   FILE *fread;
   fread = fopen(path, "r");
   char buffer[BUFFER_SIZE];
@@ -195,33 +130,34 @@ Maillage *parseDualGraphAVL(char *path)
   {
     if (buffer[0] == 'f')
     {
-      Face *f = emptyFace();
+      Face *f = faceVide();
       sscanf(buffer, "f %d %d %d", &f->v1, &f->v2, &f->v3);
-      addFace(m, f);
+      ajoutFace(m, f);
     }
     else if (buffer[0] == 'v')
     {
-      Vertex *v = emptyVertex();
+      Vertex *v = sommetVide();
       sscanf(buffer, "v %f %f %f", &v->x, &v->y, &v->z);
-      addVertex(m, v);
+      ajoutSommet(m, v);
     }
   }
   fclose(fread);
   return m;
 }
 
-void writeGDuale(char *path, GrapheDuale *grapheDuale, Graph * g, int largestDistance)
+void ecritureGDuale(char *path, GrapheDuale *grapheDuale, Graphe * g, int plusGrandeDistance)
 {
   int fdWrite = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   char buffer[BUFFER_SIZE];
   for (int i = 0; i < grapheDuale->numCentroides; i++)
   {
-    GraphNode * node = g->listAdjacents[i];
-    // Calcule de la couleur, ici on prend largest distance ayant 1 comme couleur et ainsi on fait un produit en croix
+    NoeudGraphe * noeud = g->listAdjacents[i];
+    // Il y a des cas très rares, uniquement dans le dragon.obj où le centroide n'a pas de voisin, on le skip
+    // Calcul de la couleur, ici on prend la plus grande distance ayant 1 comme couleur et ainsi on fait un produit en croix
     float ratio = 0;
-    if(largestDistance != 0)
+    if(plusGrandeDistance != 0 && noeud != NULL)
     {
-      ratio = (float)node->distance/largestDistance;
+      ratio = (float)noeud->distance/plusGrandeDistance;
     }
     int len = snprintf(
         buffer, BUFFER_SIZE, "v %f %f %f %f %f %f\n", grapheDuale->centroides[i]->x,
@@ -240,7 +176,7 @@ void writeGDuale(char *path, GrapheDuale *grapheDuale, Graph * g, int largestDis
 
 Centroide *calculCentroide(Face *f, Vertex **v)
 {
-  Centroide *c = emptyVertex();
+  Centroide *c = sommetVide();
   c->x = (v[f->v1 - 1]->x + v[f->v2 - 1]->x + v[f->v3 - 1]->x) / 3;
   c->y = (v[f->v1 - 1]->y + v[f->v2 - 1]->y + v[f->v3 - 1]->y) / 3;
   c->z = (v[f->v1 - 1]->z + v[f->v2 - 1]->z + v[f->v3 - 1]->z) / 3;
@@ -273,11 +209,11 @@ void creationCentroides(GrapheDuale *gd, Maillage *m)
 {
   for (int i = 0; i < m->numFaces; i++)
   {
-    addCentroide(gd, calculCentroide(m->faces[i], m->vertices));
+    ajoutCentroide(gd, calculCentroide(m->faces[i], m->sommets));
   }
 }
 
-void addEntryHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd, Graph * graphe)
+void ajoutEntreeHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd, Graphe * graphe)
 {
   char key[MAX_SIZE];
   int nb = snprintf(key, MAX_SIZE, "%d-%d", arete->v1, arete->v2);
@@ -302,8 +238,8 @@ void addEntryHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd
       }
       gd->aretesDuales[gd->numAretesDuales] = creationADuale(areteEquiv->indexFace, arete->indexFace);
       gd->numAretesDuales++;
-      addArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
-      addArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
+      ajoutArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
+      ajoutArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
     } else {
       hashmap_put(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)), arete);
     }
@@ -316,21 +252,20 @@ int main(int argc, char *argv[])
 {
   if (argc < 4)
   {
-    raler(0,
-          "Usage: %s nom_fichier.obj nomsortant.obj type_algo [selectsort, "
-          "heapsort, AVL, hashmap]",
-          argv[0]);
+    perror(
+          "Usage: ./main nom_fichier.obj nomsortant.obj type_algo [selectsort, "
+          "heapsort, AVL, hashmap]");
   }
   clock_t start, end;
   double cpu_time_used;
-  GrapheDuale *gd = emptyGDuale();
-  Graph *graphe = initGraph();
+  GrapheDuale *gd = GDualeVide();
+  Graphe *graphe = grapheVide();
  
   if (strcmp(argv[3], "selectsort") == 0)
   {
-    SelectAretes *sa = emptySA();
+    SelectAretes *sa = SAVide();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
-
+    printf("num aretes : %d \n", sa->numAretes);
     start = clock();
     triSelection(sa);
     end = clock();
@@ -339,13 +274,16 @@ int main(int argc, char *argv[])
     creationCentroides(gd, m);
     generationADuale(sa->aretes, gd, sa->numAretes, graphe);
     int largestDistance = parcoursLargeur(graphe);
-    writeGDuale(argv[2], gd, graphe, largestDistance);
+    ecritureGDuale(argv[2], gd, graphe, largestDistance);
   }
   else if (strcmp(argv[3], "heapsort") == 0)
   {
-    HeapAretes *ha = emptyHA();
+    HeapAretes *ha = HAVide();
     Maillage *m = parseDualGraphHeap(argv[1], ha);
     start = clock();
+    for(int i = 0; i<m->numFaces; i++){
+      ajoutTasArete(ha, m->faces[i], i);
+    }
     while (ha->noeudsAlloues > 0)
     {
       supprimerMax(ha);
@@ -356,17 +294,20 @@ int main(int argc, char *argv[])
     creationCentroides(gd, m);
     generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
     int largestDistance = parcoursLargeur(graphe);
-    writeGDuale(argv[2], gd, graphe, largestDistance);
+    printf("nb graphe nodes : %d\n", graphe->nbGraphNodes);
+    ecritureGDuale(argv[2], gd, graphe, largestDistance);
   }
   else if (strcmp(argv[3], "AVL") == 0)
   {
     AVL a = NULL;
     Maillage *m = parseDualGraphAVL(argv[1]);
-    geneADuales(m, &a);
+    geneADuales(m, &a, gd, graphe);
     affichageArbre(a);
+    int plusGrandeDistance = parcoursLargeur(graphe);
+    ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
   } else if(strcmp(argv[3], "hashmap") == 0)
   {
-    SelectAretes *sa = emptySA();
+    SelectAretes *sa = SAVide();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
     creationCentroides(gd, m);
     printf("size num aretes : %d\n", sa->numAretes);
@@ -378,13 +319,13 @@ int main(int argc, char *argv[])
     start = clock();
     for(int i = 0; i<sa->numAretes; i++)
     {
-      addEntryHashmap(&hashmap, sa->aretes[i], gd, graphe);
+      ajoutEntreeHashmap(&hashmap, sa->aretes[i], gd, graphe);
     }
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
     int largestDistance = parcoursLargeur(graphe);
-    writeGDuale(argv[2], gd, graphe, largestDistance);
+    ecritureGDuale(argv[2], gd, graphe, largestDistance);
     hashmap_destroy(&hashmap);
   }
 }

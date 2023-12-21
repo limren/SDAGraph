@@ -1,6 +1,6 @@
-#include "AVL.h"
-#include "tris.h"
-#include "creation.h"
+#include "headers/AVL.h"
+#include "headers/tris.h"
+#include "headers/creation.h"
 AVL newArbre(Arete *val, int hauteur, AVL pere)
 {
   AVL nouvelArbre = malloc(sizeof(struct noeud));
@@ -140,14 +140,27 @@ void updateHeight(AVL *arbre)
   }
 }
 
-void insertionAVL(AVL *arbre, Arete *val)
+void insertionAVL(AVL *arbre, Arete *val, GrapheDuale * gd, Graphe * graphe)
 {
   if (*arbre == NULL)
   {
     *arbre = newArbre(val, 0, NULL);
     return;
   }
-
+  if(sontEquilaventes(val, (*arbre)->val))
+  {
+     if (gd->numAretesDuales % (3 * NB_FACES) == 0)
+      {
+        gd->aretesDuales = realloc(gd->aretesDuales,
+                                   sizeof(AreteDuale) *
+                                       (gd->numAretesDuales + (3 * NB_FACES)));
+      }
+      gd->aretesDuales[gd->numAretesDuales] = creationADuale(val->indexFace, (*arbre)->val->indexFace);
+      gd->numAretesDuales++;
+      ajoutArcGraph(graphe, val->indexFace, (*arbre)->val->indexFace);
+      ajoutArcGraph(graphe, (*arbre)->val->indexFace, val->indexFace);
+    return;
+  }
   if (estSuperieureA(val, (*arbre)->val))
   {
     if ((*arbre)->filsDroit == NULL)
@@ -159,7 +172,7 @@ void insertionAVL(AVL *arbre, Arete *val)
     }
     else
     {
-      insertionAVL(&(*arbre)->filsDroit, val);
+      insertionAVL(&(*arbre)->filsDroit, val, gd, graphe);
     }
   }
   else
@@ -173,7 +186,7 @@ void insertionAVL(AVL *arbre, Arete *val)
     }
     else
     {
-      insertionAVL(&(*arbre)->filsGauche, val);
+      insertionAVL(&(*arbre)->filsGauche, val, gd, graphe);
     }
   }
 }
@@ -210,24 +223,24 @@ void affichageArbre(AVL arbre)
   }
 }
 
-void addAVLAretes(AVL *avl, Face *f, int numFace)
+void addAVLAretes(AVL *avl, Face *f, int numFace, GrapheDuale * gd, Graphe * graphe)
 {
   Arete *a = creationArete(f->v1, f->v2, numFace);
   if (a != NULL)
   {
-    insertionAVL(avl, a);
+    insertionAVL(avl, a, gd, graphe);
   }
 
   Arete *b = creationArete(f->v1, f->v3, numFace);
   if (b != NULL)
   {
-    insertionAVL(avl, b);
+    insertionAVL(avl, b, gd, graphe);
   }
 
   Arete *c = creationArete(f->v2, f->v3, numFace);
   if (c != NULL)
   {
-    insertionAVL(avl, c);
+    insertionAVL(avl, c, gd, graphe);
   }
 }
 
@@ -244,7 +257,7 @@ void parcoursAVL(AVL arbre)
   }
 }
 
-void geneADuales(Maillage *m, AVL *arbre)
+void geneADuales(Maillage *m, AVL *arbre, GrapheDuale * gd, Graphe * graphe)
 {
   if (arbre == NULL)
   {
@@ -253,7 +266,7 @@ void geneADuales(Maillage *m, AVL *arbre)
 
   for (int i = 0; i < m->numFaces; i++)
   {
-    addAVLAretes(arbre, m->faces[i], i);
+    addAVLAretes(arbre, m->faces[i], i, gd, graphe);
   }
 }
 

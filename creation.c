@@ -1,54 +1,46 @@
-#include "creation.h"
-#include "AVL.h"
+#include "headers/creation.h"
+#include "headers/AVL.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-Vertex *emptyVertex()
+Vertex *sommetVide()
 {
   Vertex *v = malloc(sizeof(struct Vertex));
   return v;
 }
 
-Face *emptyFace()
+Face *faceVide()
 {
   Face *f = malloc(sizeof(struct Face));
   return f;
 }
 
-Maillage *emptyMaillage()
+Maillage *maillageVide()
 {
   Maillage *m = malloc(sizeof(struct Maillage));
   // On met 15 au pif mais tqt on fera des tests pour savoir en moyenne lequel
   // est le plus opti
   m->faces = malloc(sizeof(struct Face) * NB_FACES);
-  m->vertices = malloc(sizeof(struct Vertex) * NB_VERTICES);
-  m->numVertices = 0;
+  m->sommets = malloc(sizeof(struct Vertex) * NB_VERTICES);
+  m->numSommets = 0;
   m->numFaces = 0;
   return m;
 }
 
-GrapheDuale *emptyGDuale()
+GrapheDuale *GDualeVide()
 {
   GrapheDuale *gd = malloc(sizeof(struct GrapheDuale));
-  // m->aretesDuales = malloc
   gd->centroides = malloc(sizeof(Centroide) * NB_FACES);
-  // On prend le pire des cas pour le moment où on estime qu'il y a 3 arêtes
-  // communes
   gd->aretesDuales = malloc(sizeof(AreteDuale) * (3 * NB_FACES));
   gd->numAretesDuales = 0;
   gd->numCentroides = 0;
   return gd;
 }
 
-AreteDuale *emptyAreteDuale()
-{
-  AreteDuale *a = malloc(sizeof(AreteDuale));
-  return a;
-}
 
 int sontEquilaventes(Arete *a, Arete *b)
 {
-  // if(a->indexFace == b->indexFace) return 0;
+  if(a->indexFace == b->indexFace) return 0;
   if (a->v1 == b->v1 && a->v2 == b->v2)
   {
     return 1;
@@ -56,57 +48,6 @@ int sontEquilaventes(Arete *a, Arete *b)
   return 0;
 }
 
-SelectAretes *emptySA()
-{
-  SelectAretes *sa = malloc(sizeof(SelectAretes));
-  sa->aretes = malloc(sizeof(Arete) * 3 * (NB_FACES));
-  sa->numAretes = 0;
-  return sa;
-}
-
-Arete *creationSelectArete(SelectAretes *sa, int v1, int v2, int numFace)
-{
-  if ((sa->numAretes % (3 * (NB_FACES))) == 0)
-  {
-    sa->aretes =
-        realloc(sa->aretes, sizeof(Arete) * (sa->numAretes + (3 * (NB_FACES))));
-  }
-  Arete *a = malloc(sizeof(Arete));
-  if (v1 > v2)
-  {
-    a->v1 = v2;
-    a->v2 = v1;
-  }
-  else
-  {
-    a->v1 = v1;
-    a->v2 = v2;
-  }
-  a->indexFace = numFace;
-  return a;
-}
-
-Arete *creationHeapArete(HeapAretes *ha, int v1, int v2, int numFace)
-{
-  if ((ha->capacite == ha->noeudsAlloues))
-  {
-    ha->capacite += (3 * NB_FACES);
-    ha->T = realloc(ha->T, sizeof(Arete *) * ha->capacite);
-  }
-  Arete *a = malloc(sizeof(Arete));
-  if (v1 > v2)
-  {
-    a->v1 = v2;
-    a->v2 = v1;
-  }
-  else
-  {
-    a->v1 = v1;
-    a->v2 = v2;
-  }
-  a->indexFace = numFace;
-  return a;
-}
 
 Arete *creationArete(int v1, int v2, int numFace)
 {
@@ -125,16 +66,6 @@ Arete *creationArete(int v1, int v2, int numFace)
   return a;
 }
 
-HeapAretes *emptyHA()
-{
-  HeapAretes *t = malloc(sizeof(HeapAretes));
-  t->noeudsAlloues = 0;
-  t->numNoeuds = 0;
-  t->T = malloc(sizeof(Arete *) * (3 * NB_FACES));
-  t->capacite = (3 * NB_FACES);
-  return t;
-}
-
 AreteDuale *creationADuale(int c1, int c2)
 {
   AreteDuale *a = malloc(sizeof(AreteDuale));
@@ -143,7 +74,7 @@ AreteDuale *creationADuale(int c1, int c2)
   return a;
 }
 
-void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph * graphe)
+void generationADuale(Arete **t, GrapheDuale *gd, int size, Graphe * graphe)
 {
   for (int i = 0; i < size-1; i++)
   {
@@ -158,8 +89,8 @@ void generationADuale(Arete **t, GrapheDuale *gd, int size, Graph * graphe)
       }
       gd->aretesDuales[gd->numAretesDuales] = creationADuale(t[i]->indexFace, t[i + 1]->indexFace);
       gd->numAretesDuales++;
-      addArcGraph(graphe, t[i]->indexFace, t[i+1]->indexFace);
-      addArcGraph(graphe, t[i+1]->indexFace, t[i]->indexFace);
+      ajoutArcGraph(graphe, t[i]->indexFace, t[i+1]->indexFace);
+      ajoutArcGraph(graphe, t[i+1]->indexFace, t[i]->indexFace);
     }
   }
 }

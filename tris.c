@@ -1,4 +1,4 @@
-#include "tris.h"
+#include "headers/tris.h"
 #include <stdio.h>
 
 double sommeIndex(Arete *a) { return a->v1 + a->v2; }
