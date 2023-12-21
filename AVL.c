@@ -33,13 +33,16 @@ int max(int a, int b) { return (a > b) ? a : b; }
 
 void rotationGauche(AVL *a)
 {
+  // On récupère le noeud à pivoter
   AVL arbre = *a;
   if (arbre != NULL && arbre->filsDroit != NULL)
   {
+    // On récupère les pointeurs des noeuds concernés
     AVL filsDroit = arbre->filsDroit;
     AVL filsGaucheFD = filsDroit->filsGauche;
     AVL pere = arbre->pere;
 
+     // Réarrangement des pointeurs pour effectuer la rotation gauche
     arbre->filsDroit = filsGaucheFD;
     if (filsGaucheFD != NULL)
     {
@@ -49,9 +52,11 @@ void rotationGauche(AVL *a)
     filsDroit->filsGauche = arbre;
     arbre->pere = filsDroit;
 
+    // Réajustement de la hauteur des noeuds après rotation
     arbre->hauteur = max(hauteur(arbre->filsGauche), hauteur(arbre->filsDroit)) + 1;
     filsDroit->hauteur = max(hauteur(filsDroit->filsGauche), hauteur(filsDroit->filsDroit)) + 1;
 
+    // Mise à jour du lien du père du noeud pivoté
     if (pere != NULL)
     {
       if (pere->filsGauche == arbre)
@@ -60,6 +65,7 @@ void rotationGauche(AVL *a)
       }
       else
       {
+        // Si le noeud pivoté était la racine, mettez à jour la racine de l'arbre
         pere->filsDroit = filsDroit;
       }
     }
@@ -67,11 +73,14 @@ void rotationGauche(AVL *a)
     {
       *a = filsDroit;
     }
+    // Mise à jour du lien du père du noeud filsDroit
     filsDroit->pere = pere;
   }
 }
+
 void rotationDroite(AVL *a)
 {
+  // Même principe que rotation gauche
   AVL arbre = *a;
   if (arbre != NULL && arbre->filsGauche != NULL)
   {
@@ -134,8 +143,9 @@ void updateHeight(AVL *arbre)
   {
     int hFG = ((*arbre)->filsGauche != NULL) ? (*arbre)->filsGauche->hauteur : -1;
     int hFD = ((*arbre)->filsDroit != NULL) ? (*arbre)->filsDroit->hauteur : -1;
-
+    // La hauteur du père est basé sur la plus grande de ses fils (droit et gauche en l'occurence)
     (*arbre)->hauteur = max(hFG, hFD) + 1;
+    // On doit ajuster la hauteur des pères puisque la hauteur de ses fils a changé
     updateHeight(&(*arbre)->pere);
   }
 }
@@ -147,22 +157,18 @@ void insertionAVL(AVL *arbre, Arete *val, GrapheDuale * gd, Graphe * graphe)
     *arbre = newArbre(val, 0, NULL);
     return;
   }
+  // Si l'arête est équivalente à une autre, on ne l'insère pas dans l'arbre et on la traite comme si elle était déjà présente
   if(sontEquilaventes(val, (*arbre)->val))
   {
-     if (gd->numAretesDuales % (3 * NB_FACES) == 0)
-      {
-        gd->aretesDuales = realloc(gd->aretesDuales,
-                                   sizeof(AreteDuale) *
-                                       (gd->numAretesDuales + (3 * NB_FACES)));
-      }
-      gd->aretesDuales[gd->numAretesDuales] = creationADuale(val->indexFace, (*arbre)->val->indexFace);
-      gd->numAretesDuales++;
-      ajoutArcGraph(graphe, val->indexFace, (*arbre)->val->indexFace);
-      ajoutArcGraph(graphe, (*arbre)->val->indexFace, val->indexFace);
+    // Ajout de l'arête dans le graphe duale
+    ajoutAreteDuale(val, (*arbre)->val, gd, graphe);
+    // On ne l'insère pas dans l'arbre, son équivalent est déjà présent (évite d'avoir un arbre trop complexe)
     return;
   }
+  // Insertion comme dans un ABR, or, ici, on ajuste la hauteur et on regarde les déséquilibres afin de limiter la hauteur de l'arbre
   if (estSuperieureA(val, (*arbre)->val))
   {
+    // Si fils droit libre, alors on insère l'arête
     if ((*arbre)->filsDroit == NULL)
     {
       AVL fils = newArbre(val, 0, *arbre);
@@ -177,6 +183,7 @@ void insertionAVL(AVL *arbre, Arete *val, GrapheDuale * gd, Graphe * graphe)
   }
   else
   {
+    // Si fils gauche libre, alors on insère l'arête
     if ((*arbre)->filsGauche == NULL)
     {
       AVL fils = newArbre(val, 0, *arbre);
@@ -244,19 +251,6 @@ void addAVLAretes(AVL *avl, Face *f, int numFace, GrapheDuale * gd, Graphe * gra
   }
 }
 
-void parcoursAVL(AVL arbre)
-{
-  if (arbre->filsDroit != NULL && arbre->filsGauche != NULL)
-  {
-    if (sontEquilaventes(arbre->val, arbre->filsGauche->val) || sontEquilaventes(arbre->val, arbre->filsDroit->val))
-    {
-      printf("good");
-    }
-    parcoursAVL(arbre->filsDroit);
-    parcoursAVL(arbre->filsGauche);
-  }
-}
-
 void geneADuales(Maillage *m, AVL *arbre, GrapheDuale * gd, Graphe * graphe)
 {
   if (arbre == NULL)
@@ -274,6 +268,18 @@ void checkDeseq(AVL * a)
 {
   if (a != NULL)
   {
+    /* 
+      Calcul du déséquilibre du noeud courant et rotation si nécessaire
+      Si déséquilibre >= 2 ou <= -2, alors on doit faire une rotation comme vu en cours
+      C'est-à-dire :
+        - Si déséquilibre >= 2, alors on regarde le déséquilibre du fils gauche
+          - Si déséquilibre du fils gauche < 0, alors on fait une rotation gauche-droite
+          - Sinon, on fait une rotation droite
+        - Si déséquilibre <= -2, alors on regarde le déséquilibre du fils droit
+          - Si déséquilibre du fils droit > 0, alors on fait une rotation droite-gauche
+          - Sinon, on fait une rotation gauche
+      Ensuite, on vérifie bien que les pères sont équilibrés aussi, sinon on recommence
+    */
     int desequilibrage = deseq(*a);
     if (desequilibrage >= 2 || desequilibrage <= -2)
     {

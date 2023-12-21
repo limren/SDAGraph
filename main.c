@@ -19,7 +19,9 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+// Définition de la taille maximale de la key (on imagine que c'est impossible d'avoir deux arêtes ayant une somme de leurs chiffres faisant 255)
 #define MAX_SIZE 255
+
 
 void ajoutFace(Maillage *m, Face *f)
 {
@@ -93,7 +95,7 @@ Maillage *parseDualGraphSelect(char *path, SelectAretes *sa)
   return m;
 }
 
-Maillage *parseDualGraphHeap(char *path, HeapAretes *ha)
+Maillage *parseDualGraphHeap(char *path)
 {
   Maillage *m = maillageVide();
   FILE *fread;
@@ -213,6 +215,7 @@ void creationCentroides(GrapheDuale *gd, Maillage *m)
   }
 }
 
+
 void ajoutEntreeHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale * gd, Graphe * graphe)
 {
   char key[MAX_SIZE];
@@ -227,29 +230,26 @@ void ajoutEntreeHashmap(struct hashmap_s * hashmap, Arete * arete, GrapheDuale *
     perror("Erreur hashmap null");
     exit(EXIT_FAILURE);
   }
+  // Si une entrée correspond à la clée utilisée, on récupère l'arête correspondante
   Arete * areteEquiv = hashmap_get(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)));
   if(areteEquiv != NULL)
   {
-    // comme hashmap_get peut renvoyer une valeur même si l'entrée n'existe pas, on vérifie que les deux arêtes sont bien équivalentes
+    // Comme hashmap_get peut renvoyer une valeur même si l'entrée n'existe pas (conflit probable), on vérifie que les deux arêtes sont bien équivalentes
     if(sontEquilaventes(arete, areteEquiv)){
-      if (gd->numAretesDuales % (3 * NB_FACES) == 0)
-      {
-        gd->aretesDuales = realloc(gd->aretesDuales, sizeof(AreteDuale) * (gd->numAretesDuales + (3 * NB_FACES)));
-      }
-      gd->aretesDuales[gd->numAretesDuales] = creationADuale(areteEquiv->indexFace, arete->indexFace);
-      gd->numAretesDuales++;
-      ajoutArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
-      ajoutArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
+      ajoutAreteDuale(arete, areteEquiv, gd, graphe);
     } else {
+      // Si les deux arêtes ne sont pas équivalentes, on ajoute la key avec l'arête dans la hashmap
       hashmap_put(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)), arete);
     }
   } else {
+    // Si l'entrée n'existe pas, on ajoute la key avec l'arête dans la hashmap
     hashmap_put(hashmap, key, HASHMAP_CAST(unsigned, strlen(key)), arete);
   }
 }
 
 int main(int argc, char *argv[])
 {
+  // Utilisation du programme (cf README.md)
   if (argc < 4)
   {
     perror(
@@ -258,14 +258,33 @@ int main(int argc, char *argv[])
   }
   clock_t start, end;
   double cpu_time_used;
+  
+  // Initialisation des graphes 
   GrapheDuale *gd = GDualeVide();
   Graphe *graphe = grapheVide();
  
+  /*
+    * Ici, on choisit l'algorithme de tri à utiliser selon l'utilisateur, afin de générer, dans un but final, le graphe duale.
+    * Les étapes seront globalement les mêmes pour chaque algorithme, à savoir :
+    * - On parse le fichier .obj pour récupérer les faces et les sommets
+    * - On crée les centroides
+    ** Génération du graphe duale
+    * - On génère les arêtes duales en fonction de l'algorithme de tri choisi
+    * - On ajoute les arêtes duales au graphe duale
+    * - On génère le graphe duale
+    ** Génération des couleurs
+    * - On parcourt le graphe duale en largeur pour trouver la plus grande distance entre deux centroides
+    * - On génère les couleurs en fonction de la plus grande distance
+    ** Ecriture du fichier .obj
+    * - On écrit les centroides dans le fichier .obj
+    * - On écrit les arêtes duales dans le fichier .obj
+    ** Libération de la mémoire
+    * - On libère la mémoire allouée selon les structures de données utilisées
+  */
   if (strcmp(argv[3], "selectsort") == 0)
   {
     SelectAretes *sa = SAVide();
     Maillage *m = parseDualGraphSelect(argv[1], sa);
-    printf("num aretes : %d \n", sa->numAretes);
     start = clock();
     triSelection(sa);
     end = clock();
@@ -273,13 +292,13 @@ int main(int argc, char *argv[])
     printf("CPU Time: %f seconds\n", cpu_time_used);
     creationCentroides(gd, m);
     generationADuale(sa->aretes, gd, sa->numAretes, graphe);
-    int largestDistance = parcoursLargeur(graphe);
-    ecritureGDuale(argv[2], gd, graphe, largestDistance);
+    int plusGrandeDistance = parcoursLargeur(graphe);
+    ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
   }
   else if (strcmp(argv[3], "heapsort") == 0)
   {
     HeapAretes *ha = HAVide();
-    Maillage *m = parseDualGraphHeap(argv[1], ha);
+    Maillage *m = parseDualGraphHeap(argv[1]);
     start = clock();
     for(int i = 0; i<m->numFaces; i++){
       ajoutTasArete(ha, m->faces[i], i);
@@ -293,9 +312,8 @@ int main(int argc, char *argv[])
     printf("CPU Time: %f seconds\n", cpu_time_used);
     creationCentroides(gd, m);
     generationADuale(ha->T, gd, ha->numNoeuds+1, graphe);
-    int largestDistance = parcoursLargeur(graphe);
-    printf("nb graphe nodes : %d\n", graphe->nbGraphNodes);
-    ecritureGDuale(argv[2], gd, graphe, largestDistance);
+    int plusGrandeDistance = parcoursLargeur(graphe);
+    ecritureGDuale(argv[2], gd, graphe, plusGrandeDistance);
   }
   else if (strcmp(argv[3], "AVL") == 0)
   {
@@ -324,8 +342,8 @@ int main(int argc, char *argv[])
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f seconds\n", cpu_time_used);
-    int largestDistance = parcoursLargeur(graphe);
-    ecritureGDuale(argv[2], gd, graphe, largestDistance);
+    int distanceLaPlusGrande = parcoursLargeur(graphe);
+    ecritureGDuale(argv[2], gd, graphe, distanceLaPlusGrande);
     hashmap_destroy(&hashmap);
   }
 }

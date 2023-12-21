@@ -18,8 +18,6 @@ Face *faceVide()
 Maillage *maillageVide()
 {
   Maillage *m = malloc(sizeof(struct Maillage));
-  // On met 15 au pif mais tqt on fera des tests pour savoir en moyenne lequel
-  // est le plus opti
   m->faces = malloc(sizeof(struct Face) * NB_FACES);
   m->sommets = malloc(sizeof(struct Vertex) * NB_VERTICES);
   m->numSommets = 0;
@@ -31,12 +29,12 @@ GrapheDuale *GDualeVide()
 {
   GrapheDuale *gd = malloc(sizeof(struct GrapheDuale));
   gd->centroides = malloc(sizeof(Centroide) * NB_FACES);
+  // 3 * NB_FACES car on a 3 arêtes par face et donc au pire des cas, 3 arêtes duales.
   gd->aretesDuales = malloc(sizeof(AreteDuale) * (3 * NB_FACES));
   gd->numAretesDuales = 0;
   gd->numCentroides = 0;
   return gd;
 }
-
 
 int sontEquilaventes(Arete *a, Arete *b)
 {
@@ -48,6 +46,13 @@ int sontEquilaventes(Arete *a, Arete *b)
   return 0;
 }
 
+
+/*
+  Création des arêtes :
+    - On a décidé d'attribuer l'indice des vertex selon un ordre bien précis afin de pouvoir ordonner
+    nos arêtes. On a décidé de toujours mettre le plus petit indice en premier. Comme ça, il suffit de 
+    comparer les deux premiers indices pour savoir si deux arêtes sont équivalentes.
+*/
 
 Arete *creationArete(int v1, int v2, int numFace)
 {
@@ -66,6 +71,11 @@ Arete *creationArete(int v1, int v2, int numFace)
   return a;
 }
 
+/*
+  Création arête duale :
+    - Nous avons simplement mis les indices des centroïdes qui sont réliés d'une manière à ce qu'à la génération,
+    on puisse accéder à la face correspondante en un temps constant. 
+*/
 AreteDuale *creationADuale(int c1, int c2)
 {
   AreteDuale *a = malloc(sizeof(AreteDuale));
@@ -74,6 +84,11 @@ AreteDuale *creationADuale(int c1, int c2)
   return a;
 }
 
+/*
+  generationADuale :
+    - On parcourt le tableau d'arêtes et on compare les arêtes deux à deux. Si elles sont équivalentes, alors
+    on les ajoute dans le graphe duale. Cela veut simplement dire qu'elles relient deux centroïdes. Donc forme une arête duale.
+*/
 void generationADuale(Arete **t, GrapheDuale *gd, int size, Graphe * graphe)
 {
   for (int i = 0; i < size-1; i++)
@@ -81,16 +96,30 @@ void generationADuale(Arete **t, GrapheDuale *gd, int size, Graphe * graphe)
     if (sontEquilaventes(t[i], t[i + 1]))
     {
 
-      if (gd->numAretesDuales % (3 * NB_FACES) == 0)
+     ajoutAreteDuale(t[i], t[i + 1], gd, graphe);
+    }
+  }
+}
+
+/*
+  ajoutAreteDuale :
+    - On ajoute les arêtes duales au graphe duale
+    - On ajoute les arêtes duales au graphe
+    Dès que l'on ajoute une arête duale, il faut également l'ajouter au graphe - dans les deux sens puisque le 
+    graphe est non orienté.
+*/
+void ajoutAreteDuale(Arete * arete, Arete * areteEquiv, GrapheDuale * gd, Graphe * graphe)
+{
+  // Ajout de l'arête dans le graphe duale
+     if (gd->numAretesDuales % (3 * NB_FACES) == 0)
       {
         gd->aretesDuales = realloc(gd->aretesDuales,
                                    sizeof(AreteDuale) *
                                        (gd->numAretesDuales + (3 * NB_FACES)));
       }
-      gd->aretesDuales[gd->numAretesDuales] = creationADuale(t[i]->indexFace, t[i + 1]->indexFace);
+      gd->aretesDuales[gd->numAretesDuales] = creationADuale(arete->indexFace, areteEquiv->indexFace);
       gd->numAretesDuales++;
-      ajoutArcGraph(graphe, t[i]->indexFace, t[i+1]->indexFace);
-      ajoutArcGraph(graphe, t[i+1]->indexFace, t[i]->indexFace);
-    }
-  }
+      // Ajout de l'arête dans le graphe non orientée, pour le parcours en largeur - donc on doit ajouter (a,b) et (b,a) 
+      ajoutArcGraph(graphe, arete->indexFace, areteEquiv->indexFace);
+      ajoutArcGraph(graphe, areteEquiv->indexFace, arete->indexFace);
 }

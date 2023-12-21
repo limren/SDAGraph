@@ -6,6 +6,7 @@ HeapAretes *HAVide()
   t->noeudsAlloues = 0;
   t->numNoeuds = 0;
   t->T = malloc(sizeof(Arete *) * (3 * NB_FACES));
+  // Chaque face a 3 aretes, donc on a 3 fois plus d'aretes que de faces 
   t->capacite = (3 * NB_FACES);
   return t;
 }
@@ -17,21 +18,9 @@ Arete *creationTasArete(HeapAretes *ha, int v1, int v2, int numFace)
     ha->capacite += (3 * NB_FACES);
     ha->T = realloc(ha->T, sizeof(Arete *) * ha->capacite);
   }
-  Arete *a = malloc(sizeof(Arete));
-  if (v1 > v2)
-  {
-    a->v1 = v2;
-    a->v2 = v1;
-  }
-  else
-  {
-    a->v1 = v1;
-    a->v2 = v2;
-  }
-  a->indexFace = numFace;
+  Arete *a = creationArete(v1, v2, numFace);
   return a;
 }
-
 
 void ajoutTasArete(HeapAretes *ha, Face *f, int numFace)
 {

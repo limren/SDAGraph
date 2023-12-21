@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "structs.h"
+#include "creation.h"
 #include "const.h"
 
 SelectAretes *SAVide();

@@ -15,18 +15,7 @@ Arete *creationAreteSelection(SelectAretes *sa, int v1, int v2, int numFace)
     sa->aretes =
         realloc(sa->aretes, sizeof(Arete) * (sa->numAretes + (3 * (NB_FACES))));
   }
-  Arete *a = malloc(sizeof(Arete));
-  if (v1 > v2)
-  {
-    a->v1 = v2;
-    a->v2 = v1;
-  }
-  else
-  {
-    a->v1 = v1;
-    a->v2 = v2;
-  }
-  a->indexFace = numFace;
+  Arete *a = creationArete(v1, v2, numFace);
   return a;
 }
 

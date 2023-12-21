@@ -1,7 +1,6 @@
 #include "headers/tris.h"
 #include <stdio.h>
 
-double sommeIndex(Arete *a) { return a->v1 + a->v2; }
 
 int estSuperieureA(Arete *a, Arete *b)
 {
@@ -18,6 +17,14 @@ void echange(Arete **a, int i, int j)
   a[i] = a[j];
   a[j] = tmp;
 }
+
+
+/*
+  triSelection :
+  - sa : structure contenant les arêtes à trier
+  - numAretes : nombre d'arêtes dans la structure
+  -- On parcourt le tableau et on échange les valeurs si la valeur de droite est plus petite que celle de gauche
+*/
 
 void triSelection(SelectAretes *sa)
 {
@@ -38,6 +45,17 @@ void triSelection(SelectAretes *sa)
 int filsGauche(int i) { return 2 * i + 1; }
 int filsDroit(int i) { return 2 * i + 2; }
 int pere(int i) { return (i - 1) / 2; }
+
+/*
+  insertionTas :
+  - t : tas dans lequel on insère
+  - val : valeur à insérer
+  - numNoeuds : nombre de noeuds dans le tas
+  -- On insère la valeur à la fin du tas et on remonte la valeur jusqu'à ce qu'elle soit à la bonne place
+  2i+2 = fils droit
+  2i+1 = fils gauche
+  (i-1)/2 = père
+*/
 
 void insertionTas(HeapAretes *t, Arete *val)
 {
@@ -63,6 +81,13 @@ void afficherTas(HeapAretes *t)
   printf("\n");
 }
 
+/*
+  supprimerMax :
+  - t : tas dans lequel on supprime
+  - numNoeuds : nombre de noeuds dans le tas
+  -- On supprime la racine et on remplace la racine par la dernière valeur du tas
+  On fait descendre la valeur jusqu'à ce qu'elle soit à la bonne place
+*/
 void supprimerMax(HeapAretes *t)
 {
   int i = t->noeudsAlloues - 1;
